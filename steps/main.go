@@ -9,11 +9,11 @@ import (
 )
 
 func main() {
-
     var (
-        id   string
-        name string
+        labelTemplateID string
+        name            string
     )
+
     rootCmd := &cobra.Command{
         Use:   "",
         Short: "",
@@ -21,24 +21,34 @@ func main() {
     }
 
     ctx := context.Background()
+
     repository, err := labels2.NewRepository(ctx)
     if err != nil {
         panic(err)
     }
 
     service := labels2.NewService(repository)
+
     var createLabelTemplate = &cobra.Command{
         Use:   "labels-create-template",
         Short: "",
-        RunE: func(cmd *cobra.Command, args []string) error {
+        RunE: func(_ *cobra.Command, _ []string) error {
+            err = service.CreateLabelTemplate(ctx, labelTemplateID, name)
+            if err != nil {
+                return err
+            }
+
             fmt.Println("1")
-            return service.CreateLabelTemplate(ctx, id, name)
+
+            return nil
         },
     }
 
-    rootCmd.PersistentFlags().StringVarP(&id, "id", "i", "", "id")
-    createLabelTemplate.PersistentFlags().StringVarP(&name, "manufacturer-organization-name", "m", "", "manufacturer-organization-name")
+    rootCmd.PersistentFlags().StringVarP(&labelTemplateID, "id", "i", "", "id")
+    createLabelTemplate.PersistentFlags().StringVarP(&name, "manufacturer-organization-name", "m",
+        "", "manufacturer-organization-name")
     rootCmd.AddCommand(createLabelTemplate)
+
     err = rootCmd.Execute()
     if err != nil {
         panic(err)

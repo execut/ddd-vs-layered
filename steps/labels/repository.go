@@ -2,10 +2,15 @@ package labels
 
 import (
     "context"
-    "fmt"
+    "errors"
     "os"
 
     "github.com/jackc/pgx/v5"
+)
+
+var (
+    ErrCouldNotTruncate = errors.New("could not truncate label template")
+    ErrCouldNotCreate   = errors.New("could not create label template")
 )
 
 type Repository struct {
@@ -14,12 +19,14 @@ type Repository struct {
 
 func NewRepository(ctx context.Context) (*Repository, error) {
     connString := os.Getenv("DATABASE_URL")
+
     conn, err := pgx.Connect(ctx, connString)
     if err != nil {
         return nil, err
     }
 
-    if err = conn.Ping(ctx); err != nil {
+    err = conn.Ping(ctx)
+    if err != nil {
         return nil, err
     }
 
@@ -38,7 +45,7 @@ func (r Repository) Insert(ctx context.Context, model LabelTemplate) error {
     }
 
     if result.RowsAffected() == 0 {
-        return fmt.Errorf("could not create label template")
+        return ErrCouldNotCreate
     }
 
     return nil
@@ -55,7 +62,7 @@ func (r Repository) Truncate(ctx context.Context) error {
     }
 
     if result.RowsAffected() == 0 {
-        return fmt.Errorf("could not truncate label template")
+        return ErrCouldNotTruncate
     }
 
     return nil

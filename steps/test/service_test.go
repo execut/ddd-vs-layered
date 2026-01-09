@@ -1,4 +1,4 @@
-package test
+package test_test
 
 import (
     "context"
@@ -10,7 +10,9 @@ import (
 
 func TestLabels_Live(t *testing.T) {
     t.Parallel()
+
     var service *labels2.Service
+
     repository, err := labels2.NewRepository(t.Context())
     require.NoError(t, err)
     t.Cleanup(func() {
