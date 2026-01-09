@@ -3,7 +3,7 @@ package test_test
 import (
     "testing"
 
-    "effective-architecture/steps/2-ddd-event-sourcing/domain"
+    "effective-architecture/steps/domain"
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/require"
 )

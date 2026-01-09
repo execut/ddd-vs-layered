@@ -4,8 +4,8 @@ import (
     "context"
     "testing"
 
-    "effective-architecture/steps/2-ddd-event-sourcing/application"
-    "effective-architecture/steps/2-ddd-event-sourcing/infrastructure"
+    "effective-architecture/steps/application"
+    "effective-architecture/steps/infrastructure"
     "github.com/stretchr/testify/require"
 )
 

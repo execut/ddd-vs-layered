@@ -4,7 +4,7 @@ import (
     "context"
     "errors"
 
-    "effective-architecture/steps/2-ddd-event-sourcing/domain"
+    domain2 "effective-architecture/steps/domain"
     "github.com/jackc/pgx/v5"
 )
 
@@ -18,7 +18,7 @@ func NewRepository(db *LabelTemplateRepository) *Repository {
     }
 }
 
-func (r Repository) Load(ctx context.Context, aggregate *domain.LabelTemplate) error {
+func (r Repository) Load(ctx context.Context, aggregate *domain2.LabelTemplate) error {
     model, err := r.db.Load(ctx, aggregate.ID.UUID)
     if err != nil {
         if errors.Is(err, pgx.ErrNoRows) {
@@ -28,7 +28,7 @@ func (r Repository) Load(ctx context.Context, aggregate *domain.LabelTemplate) e
         return err
     }
 
-    domainManufacturerOrganizationName, err := domain.NewManufacturerOrganizationName(
+    domainManufacturerOrganizationName, err := domain2.NewManufacturerOrganizationName(
         model.ManufacturerOrganizationName)
     if err != nil {
         return err
@@ -39,7 +39,7 @@ func (r Repository) Load(ctx context.Context, aggregate *domain.LabelTemplate) e
     return nil
 }
 
-func (r Repository) Save(ctx context.Context, aggregate *domain.LabelTemplate) error {
+func (r Repository) Save(ctx context.Context, aggregate *domain2.LabelTemplate) error {
     model := LabelTemplate{
         ID:                           aggregate.ID.UUID.String(),
         ManufacturerOrganizationName: aggregate.ManufacturerOrganizationName.Name,

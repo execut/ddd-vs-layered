@@ -1,6 +1,8 @@
 package test_test
 
-import "effective-architecture/steps/2-ddd-event-sourcing/domain"
+import (
+    domain2 "effective-architecture/steps/domain"
+)
 
 const (
     expectedUUIDValue                         = "123e4567-e89b-12d3-a456-426655440000"
@@ -8,7 +10,7 @@ const (
 )
 
 var (
-    expectedUUID, _                         = domain.NewLabelTemplateID(expectedUUIDValue)
-    expectedManufacturerOrganizationName, _ = domain.NewManufacturerOrganizationName(
+    expectedUUID, _                         = domain2.NewLabelTemplateID(expectedUUIDValue)
+    expectedManufacturerOrganizationName, _ = domain2.NewManufacturerOrganizationName(
         expectedManufacturerOrganizationNameValue)
 )

@@ -3,27 +3,27 @@ package application
 import (
     "context"
 
-    "effective-architecture/steps/2-ddd-event-sourcing/domain"
-    "effective-architecture/steps/2-ddd-event-sourcing/infrastructure"
+    domain2 "effective-architecture/steps/domain"
+    infrastructure2 "effective-architecture/steps/infrastructure"
 )
 
 type Application struct {
-    repository domain.IRepository
+    repository domain2.IRepository
 }
 
-func NewApplication(repository *infrastructure.LabelTemplateRepository) (*Application, error) {
+func NewApplication(repository *infrastructure2.LabelTemplateRepository) (*Application, error) {
     return &Application{
-        repository: infrastructure.NewRepository(repository),
+        repository: infrastructure2.NewRepository(repository),
     }, nil
 }
 
 func (a *Application) CreateLabelTemplate(ctx context.Context, uuid string, manufacturerOrganizationName string) error {
-    domainUUID, err := domain.NewLabelTemplateID(uuid)
+    domainUUID, err := domain2.NewLabelTemplateID(uuid)
     if err != nil {
         return err
     }
 
-    domainLabel, err := domain.NewLabelTemplate(domainUUID)
+    domainLabel, err := domain2.NewLabelTemplate(domainUUID)
     if err != nil {
         return err
     }
@@ -33,7 +33,7 @@ func (a *Application) CreateLabelTemplate(ctx context.Context, uuid string, manu
         return err
     }
 
-    domainManufacturerOrganizationName, err := domain.NewManufacturerOrganizationName(manufacturerOrganizationName)
+    domainManufacturerOrganizationName, err := domain2.NewManufacturerOrganizationName(manufacturerOrganizationName)
     if err != nil {
         return err
     }
