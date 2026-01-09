@@ -1,0 +1,10 @@
+services:
+  db:
+    image: postgres:18.1
+    ports:
+      - "15432:5432"
+    environment:
+      POSTGRES_DB: labels
+      POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+      - ./migration.sql:/docker-entrypoint-initdb.d/dummy_dump.sql
