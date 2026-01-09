@@ -4,21 +4,21 @@ import (
     "context"
     "testing"
 
-    "effective-architecture/steps/1-layered/labels"
+    labels2 "effective-architecture/steps/labels"
     "github.com/stretchr/testify/require"
 )
 
 func TestLabels_Live(t *testing.T) {
     t.Parallel()
-    var service *labels.Service
-    repository, err := labels.NewRepository(t.Context())
+    var service *labels2.Service
+    repository, err := labels2.NewRepository(t.Context())
     require.NoError(t, err)
     t.Cleanup(func() {
         _ = repository.Truncate(context.Background())
     })
 
     t.Run("New", func(t *testing.T) {
-        service = labels.NewService(repository)
+        service = labels2.NewService(repository)
         require.NotNil(t, service)
     })
 
