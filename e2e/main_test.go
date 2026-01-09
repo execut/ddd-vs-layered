@@ -27,8 +27,8 @@ func TestMain(m *testing.M) {
     os.Exit(m.Run())
 }
 
-func runBinary(binaryPath string, args []string) (string, error) {
-    cmd := exec.Command(filepath.Join(currentPath, binaryPath), args...)
+func runBinary(args []string) (string, error) {
+    cmd := exec.Command(filepath.Join(currentPath, "bin/main"), args...)
     //cmd.Env = append(os.Environ(), "GOCOVERDIR=.coverdata")
     output, err := cmd.CombinedOutput()
     return string(output), err
