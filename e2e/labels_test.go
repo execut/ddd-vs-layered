@@ -31,8 +31,8 @@ func TestLabelLive(t *testing.T) {
     fmt.Println(string(json))
     t.Parallel()
     bins := []string{
-        //"./bin/1-layered",
-        "./bin/2-ddd-event-sourcing",
+        "./bin/1-layered",
+        //"./bin/2-ddd-event-sourcing",
     }
     for _, bin := range bins {
         t.Run(bin+": Создавать шаблон этикетки товара с UUID и Наименованием организации производителя", func(t *testing.T) {
