@@ -1,8 +1,6 @@
 package e2e_test
 
 import (
-    "encoding/json"
-    "fmt"
     "strings"
     "testing"
 
@@ -10,25 +8,7 @@ import (
     "github.com/stretchr/testify/require"
 )
 
-type MainStructure struct {
-    Text  string      `json:"text,omitempty"`
-    Array []TestArray `json:"test_array,omitempty"`
-}
-
-type TestArray struct {
-    ArrayText string `json:"array_text,omitempty"`
-}
-
 func TestLabelLive(t *testing.T) {
-    Test := MainStructure{
-        Text: "test",
-        Array: []TestArray{
-            {ArrayText: "test1"},
-            {ArrayText: "test2"},
-        },
-    }
-    json, _ := json.Marshal(Test)
-    fmt.Println(string(json))
     t.Parallel()
     bins := []string{
         "./bin/1-layered",
