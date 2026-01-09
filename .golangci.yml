@@ -122,6 +122,7 @@ linters:
     - depguard
     - forbidigo
     - gochecknoglobals
+    - exhaustruct
   # All available settings of specific linters.
   settings:
     wsl_v5:
