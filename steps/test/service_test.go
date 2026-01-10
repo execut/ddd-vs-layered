@@ -34,6 +34,12 @@ func TestLabels_Live(t *testing.T) {
         require.NoError(t, err)
     })
 
+    t.Run("Чтобы возвращалась уникальная ошибка при попытке создать уже существующий шаблон", func(t *testing.T) {
+        err := service.CreateLabelTemplate(t.Context(), testUUID, testManufacturerOrganizationName)
+
+        require.ErrorIs(t, err, labels.ErrLabelTemplateAlreadyCreated)
+    })
+
     t.Run("GetLabelTemplate", func(t *testing.T) {
         result, err := service.GetLabelTemplate(t.Context(), testUUID)
 

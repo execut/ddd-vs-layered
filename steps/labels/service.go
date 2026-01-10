@@ -3,7 +3,11 @@ package labels
 import (
     "context"
     "encoding/json"
+    "errors"
+    "strings"
 )
+
+var ErrLabelTemplateAlreadyCreated = errors.New("попытка создать уже существующий шаблон")
 
 type IRepository interface {
     Insert(ctx context.Context, model LabelTemplate) error
@@ -30,6 +34,10 @@ func (s Service) CreateLabelTemplate(ctx context.Context, id string, manufacture
 
     err := s.repository.Insert(ctx, model)
     if err != nil {
+        if strings.Contains(err.Error(), "duplicate key value violates unique constraint \"label_templates_pkey\"") {
+            return ErrLabelTemplateAlreadyCreated
+        }
+
         return err
     }
 

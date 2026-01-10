@@ -5,6 +5,7 @@ import (
     "os"
     "os/exec"
     "path/filepath"
+    "strings"
     "testing"
 )
 
@@ -29,7 +30,12 @@ func TestMain(m *testing.M) {
 
 func runBinary(args []string) (string, error) {
     cmd := exec.Command(filepath.Join(currentPath, "bin/main"), args...)
-    //cmd.Env = append(os.Environ(), "GOCOVERDIR=.coverdata")
+
     output, err := cmd.CombinedOutput()
-    return string(output), err
+    stdOutString := strings.Trim(string(output), "\n")
+    if err != nil {
+        return stdOutString, err
+    }
+
+    return stdOutString, nil
 }
