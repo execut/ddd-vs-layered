@@ -8,8 +8,10 @@ import (
 )
 
 var (
-    ErrLabelTemplateAlreadyCreated = errors.New("попытка создать уже существующий шаблон")
-    ErrLabelTemplateAlreadyDeleted = errors.New("попытка удалить уже удалённый шаблон")
+    ErrLabelTemplateAlreadyCreated                    = errors.New("попытка создать уже существующий шаблон")
+    ErrLabelTemplateAlreadyDeleted                    = errors.New("попытка удалить уже удалённый шаблон")
+    ErrLabelTemplateWrongManufacturerOrganizationName = errors.New("название организации производителя должно " +
+        "быть до 255 символов в длину")
 )
 
 type IRepository interface {
@@ -29,9 +31,14 @@ func NewService(repository IRepository) *Service {
     }
 }
 
-func (s Service) CreateLabelTemplate(ctx context.Context, id string, manufacturerOrganizationName string) error {
+func (s Service) CreateLabelTemplate(ctx context.Context, labelTemplateID string,
+    manufacturerOrganizationName string) error {
+    if len(manufacturerOrganizationName) > 255 || len(manufacturerOrganizationName) == 0 {
+        return ErrLabelTemplateWrongManufacturerOrganizationName
+    }
+
     model := LabelTemplate{
-        ID:                           id,
+        ID:                           labelTemplateID,
         ManufacturerOrganizationName: manufacturerOrganizationName,
     }
 

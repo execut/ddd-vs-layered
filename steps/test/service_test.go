@@ -2,6 +2,7 @@ package test_test
 
 import (
     "context"
+    "strings"
     "testing"
 
     "effective-architecture/steps/labels"
@@ -58,5 +59,19 @@ func TestLabels_Live(t *testing.T) {
         err := service.DeleteLabelTemplate(t.Context(), testUUID)
 
         require.ErrorIs(t, err, labels.ErrLabelTemplateAlreadyDeleted)
+    })
+
+    t.Run("Чтобы возвращалась уникальная ошибка при попытке создать шаблон, "+
+        "если длина Наименования организации производителя", func(t *testing.T) {
+        t.Run("> 255", func(t *testing.T) {
+            err := service.CreateLabelTemplate(t.Context(), testUUID, strings.Repeat("a", 256))
+
+            require.ErrorIs(t, err, labels.ErrLabelTemplateWrongManufacturerOrganizationName)
+        })
+        t.Run("= 0", func(t *testing.T) {
+            err := service.CreateLabelTemplate(t.Context(), testUUID, "")
+
+            require.ErrorIs(t, err, labels.ErrLabelTemplateWrongManufacturerOrganizationName)
+        })
     })
 }
