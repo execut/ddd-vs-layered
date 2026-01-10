@@ -35,4 +35,16 @@ func TestLabelTemplate_Live(t *testing.T) {
 
         require.ErrorIs(t, err, domain.ErrLabelTemplateAlreadyCreated)
     })
+
+    t.Run("Удалять шаблон этикетки товара по UUID", func(t *testing.T) {
+        err := labelTemplate.Delete()
+
+        require.NoError(t, err)
+    })
+
+    t.Run("Чтобы возвращалась уникальная ошибка при попытке удалить уже удалённый шаблон", func(t *testing.T) {
+        err := labelTemplate.Delete()
+
+        require.ErrorIs(t, err, domain.ErrLabelTemplateAlreadyDeleted)
+    })
 }

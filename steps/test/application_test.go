@@ -5,6 +5,7 @@ import (
     "testing"
 
     "effective-architecture/steps/application"
+    "effective-architecture/steps/domain"
     "effective-architecture/steps/infrastructure"
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/require"
@@ -45,9 +46,15 @@ func TestApplication_Live(t *testing.T) {
             `"manufacturerOrganizationName":"test manufacturer organization name"}`, result)
     })
 
-    t.Run("DeleteLabelTemplate", func(t *testing.T) {
+    t.Run("Удалять шаблон этикетки товара по UUID", func(t *testing.T) {
         err := app.DeleteLabelTemplate(t.Context(), expectedUUIDValue)
 
         require.NoError(t, err)
+    })
+
+    t.Run("Чтобы возвращалась уникальная ошибка при попытке удалить уже удалённый шаблон", func(t *testing.T) {
+        err := app.DeleteLabelTemplate(t.Context(), expectedUUIDValue)
+
+        require.ErrorIs(t, err, domain.ErrLabelTemplateAlreadyDeleted)
     })
 }
