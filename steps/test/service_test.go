@@ -53,4 +53,10 @@ func TestLabels_Live(t *testing.T) {
 
         require.NoError(t, err)
     })
+
+    t.Run("Чтобы возвращалась уникальная ошибка при попытке удалить уже удалённый шаблон", func(t *testing.T) {
+        err := service.DeleteLabelTemplate(t.Context(), testUUID)
+
+        require.ErrorIs(t, err, labels.ErrLabelTemplateAlreadyDeleted)
+    })
 }
