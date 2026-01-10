@@ -1,6 +1,13 @@
 package domain
 
+import "errors"
+
+var (
+    ErrLabelTemplateAlreadyCreated = errors.New("попытка создать уже существующий шаблон")
+)
+
 type LabelTemplate struct {
+    Status                       LabelTemplateStatus
     ManufacturerOrganizationName ManufacturerOrganizationName
     ID                           LabelTemplateID
     Events                       []LabelTemplateEvent
@@ -8,11 +15,16 @@ type LabelTemplate struct {
 
 func NewLabelTemplate(id LabelTemplateID) (*LabelTemplate, error) {
     return &LabelTemplate{
-        ID: id,
+        ID:     id,
+        Status: LabelTemplateStatusDraft,
     }, nil
 }
 
 func (t *LabelTemplate) Create(manufacturerOrganizationName ManufacturerOrganizationName) error {
+    if t.Status != LabelTemplateStatusDraft {
+        return ErrLabelTemplateAlreadyCreated
+    }
+
     err := t.addAndApplyEvent(LabelTemplateCreatedEvent{ManufacturerOrganizationName: manufacturerOrganizationName})
     if err != nil {
         return err
@@ -30,10 +42,21 @@ func (t *LabelTemplate) Delete() error {
     return nil
 }
 
+func (t *LabelTemplate) ApplyEvent(event LabelTemplateEvent) error {
+    if payload, ok := event.(LabelTemplateCreatedEvent); ok {
+        t.Status = LabelTemplateStatusCreated
+        t.ManufacturerOrganizationName = payload.ManufacturerOrganizationName
+    }
+
+    return nil
+}
+
 func (t *LabelTemplate) addAndApplyEvent(event LabelTemplateEvent) error {
     t.Events = append(t.Events, event)
-    if payload, ok := event.(LabelTemplateCreatedEvent); ok {
-        t.ManufacturerOrganizationName = payload.ManufacturerOrganizationName
+
+    err := t.ApplyEvent(event)
+    if err != nil {
+        return err
     }
 
     return nil
