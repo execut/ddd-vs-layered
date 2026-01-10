@@ -51,9 +51,21 @@ func (r Repository) Insert(ctx context.Context, model LabelTemplate) error {
     return nil
 }
 
+func (r Repository) Find(ctx context.Context, id string) (LabelTemplate, error) {
+    sql := "SELECT id, manufacturer_organization_name FROM label_templates WHERE id = $1"
+    model := LabelTemplate{}
+
+    err := r.conn.QueryRow(ctx, sql, id).Scan(&model.ID, &model.ManufacturerOrganizationName)
+    if err != nil {
+        return LabelTemplate{}, err
+    }
+
+    return model, nil
+}
+
 func (r Repository) Truncate(ctx context.Context) error {
     sql := `
-        TRUNCATE label_templates
+    TRUNCATE label_templates
     `
 
     result, err := r.conn.Exec(ctx, sql)
