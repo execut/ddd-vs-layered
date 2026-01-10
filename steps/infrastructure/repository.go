@@ -46,7 +46,17 @@ func (r Repository) Load(ctx context.Context, aggregate *domain.LabelTemplate) e
                 return err
             }
         case "domain.LabelTemplateDeletedEvent":
-            continue
+            event := domain.LabelTemplateDeletedEvent{}
+
+            err = json.Unmarshal(model.Payload, &event)
+            if err != nil {
+                return err
+            }
+
+            err = aggregate.ApplyEvent(event)
+            if err != nil {
+                return err
+            }
         }
     }
 
