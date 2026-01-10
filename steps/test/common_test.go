@@ -1,6 +1,7 @@
 package test_test
 
 const (
-    testUUID                         = "123e4567-e89b-12d3-a456-426655440000"
-    testManufacturerOrganizationName = "test manufacturer organization name"
+    expectedUUID                            = "123e4567-e89b-12d3-a456-426655440000"
+    expectedManufacturerOrganizationName    = "test manufacturer organization name"
+    expectedNewManufacturerOrganizationName = "new test manufacturer organization name"
 )

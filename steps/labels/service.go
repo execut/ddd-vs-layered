@@ -17,6 +17,7 @@ var (
 type IRepository interface {
     Insert(ctx context.Context, model LabelTemplate) error
     Find(ctx context.Context, id string) (LabelTemplate, error)
+    Update(ctx context.Context, model LabelTemplate) error
     Truncate(ctx context.Context) error
     Delete(ctx context.Context, id string) error
 }
@@ -33,8 +34,9 @@ func NewService(repository IRepository) *Service {
 
 func (s Service) CreateLabelTemplate(ctx context.Context, labelTemplateID string,
     manufacturerOrganizationName string) error {
-    if len(manufacturerOrganizationName) > 255 || len(manufacturerOrganizationName) == 0 {
-        return ErrLabelTemplateWrongManufacturerOrganizationName
+    err := s.validateVarchar(manufacturerOrganizationName)
+    if err != nil {
+        return err
     }
 
     model := LabelTemplate{
@@ -42,12 +44,32 @@ func (s Service) CreateLabelTemplate(ctx context.Context, labelTemplateID string
         ManufacturerOrganizationName: manufacturerOrganizationName,
     }
 
-    err := s.repository.Insert(ctx, model)
+    err = s.repository.Insert(ctx, model)
     if err != nil {
         if strings.Contains(err.Error(), "duplicate key value violates unique constraint \"label_templates_pkey\"") {
             return ErrLabelTemplateAlreadyCreated
         }
 
+        return err
+    }
+
+    return nil
+}
+
+func (s Service) UpdateLabelTemplate(ctx context.Context, labelTemplateID string,
+    manufacturerOrganizationName string) error {
+    err := s.validateVarchar(manufacturerOrganizationName)
+    if err != nil {
+        return err
+    }
+
+    model := LabelTemplate{
+        ID:                           labelTemplateID,
+        ManufacturerOrganizationName: manufacturerOrganizationName,
+    }
+
+    err = s.repository.Update(ctx, model)
+    if err != nil {
         return err
     }
 
@@ -76,6 +98,14 @@ func (s Service) DeleteLabelTemplate(ctx context.Context, id string) error {
         }
 
         return err
+    }
+
+    return nil
+}
+
+func (s Service) validateVarchar(manufacturerOrganizationName string) error {
+    if len(manufacturerOrganizationName) > 255 || len(manufacturerOrganizationName) == 0 {
+        return ErrLabelTemplateWrongManufacturerOrganizationName
     }
 
     return nil

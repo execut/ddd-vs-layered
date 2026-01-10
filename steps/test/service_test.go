@@ -30,33 +30,49 @@ func TestLabels_Live(t *testing.T) {
     })
 
     t.Run("CreateLabelTemplate", func(t *testing.T) {
-        err := service.CreateLabelTemplate(t.Context(), testUUID, testManufacturerOrganizationName)
+        err := service.CreateLabelTemplate(t.Context(), expectedUUID, expectedManufacturerOrganizationName)
 
         require.NoError(t, err)
     })
 
     t.Run("Чтобы возвращалась уникальная ошибка при попытке создать уже существующий шаблон", func(t *testing.T) {
-        err := service.CreateLabelTemplate(t.Context(), testUUID, testManufacturerOrganizationName)
+        err := service.CreateLabelTemplate(t.Context(), expectedUUID, expectedManufacturerOrganizationName)
 
         require.ErrorIs(t, err, labels.ErrLabelTemplateAlreadyCreated)
     })
 
     t.Run("GetLabelTemplate", func(t *testing.T) {
-        result, err := service.GetLabelTemplate(t.Context(), testUUID)
+        result, err := service.GetLabelTemplate(t.Context(), expectedUUID)
 
         require.NoError(t, err)
         assert.JSONEq(t, `{"id":"123e4567-e89b-12d3-a456-426655440000","manufacturerOrganizationName":`+
             `"test manufacturer organization name"}`, result)
     })
 
+    t.Run("Обновлять данные шаблона", func(t *testing.T) {
+        err = service.UpdateLabelTemplate(t.Context(), expectedUUID, expectedNewManufacturerOrganizationName)
+
+        require.NoError(t, err)
+        result, err := service.GetLabelTemplate(t.Context(), expectedUUID)
+
+        require.NoError(t, err)
+        assert.Contains(t, result, expectedNewManufacturerOrganizationName)
+
+        t.Run("и не давать это делать при ошибках из предыдущих пунктов", func(t *testing.T) {
+            err = service.UpdateLabelTemplate(t.Context(), expectedUUID, "")
+
+            require.ErrorIs(t, labels.ErrLabelTemplateWrongManufacturerOrganizationName, err)
+        })
+    })
+
     t.Run("DeleteLabelTemplate", func(t *testing.T) {
-        err := service.DeleteLabelTemplate(t.Context(), testUUID)
+        err := service.DeleteLabelTemplate(t.Context(), expectedUUID)
 
         require.NoError(t, err)
     })
 
     t.Run("Чтобы возвращалась уникальная ошибка при попытке удалить уже удалённый шаблон", func(t *testing.T) {
-        err := service.DeleteLabelTemplate(t.Context(), testUUID)
+        err := service.DeleteLabelTemplate(t.Context(), expectedUUID)
 
         require.ErrorIs(t, err, labels.ErrLabelTemplateAlreadyDeleted)
     })
@@ -64,12 +80,12 @@ func TestLabels_Live(t *testing.T) {
     t.Run("Чтобы возвращалась уникальная ошибка при попытке создать шаблон, "+
         "если длина Наименования организации производителя", func(t *testing.T) {
         t.Run("> 255", func(t *testing.T) {
-            err := service.CreateLabelTemplate(t.Context(), testUUID, strings.Repeat("a", 256))
+            err := service.CreateLabelTemplate(t.Context(), expectedUUID, strings.Repeat("a", 256))
 
             require.ErrorIs(t, err, labels.ErrLabelTemplateWrongManufacturerOrganizationName)
         })
         t.Run("= 0", func(t *testing.T) {
-            err := service.CreateLabelTemplate(t.Context(), testUUID, "")
+            err := service.CreateLabelTemplate(t.Context(), expectedUUID, "")
 
             require.ErrorIs(t, err, labels.ErrLabelTemplateWrongManufacturerOrganizationName)
         })

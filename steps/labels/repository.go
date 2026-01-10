@@ -12,6 +12,7 @@ var (
     ErrCouldNotTruncate = errors.New("could not truncate label template")
     ErrCouldNotCreate   = errors.New("could not create label template")
     ErrCouldNotDelete   = errors.New("could not delete label template")
+    ErrCouldNotUpdate   = errors.New("could not update label template")
 )
 
 type Repository struct {
@@ -47,6 +48,23 @@ func (r Repository) Insert(ctx context.Context, model LabelTemplate) error {
 
     if result.RowsAffected() == 0 {
         return ErrCouldNotCreate
+    }
+
+    return nil
+}
+
+func (r Repository) Update(ctx context.Context, model LabelTemplate) error {
+    sql := `
+        UPDATE label_templates SET id=$1, manufacturer_organization_name=$2 WHERE id=$1
+    `
+
+    result, err := r.conn.Exec(ctx, sql, model.ID, model.ManufacturerOrganizationName)
+    if err != nil {
+        return err
+    }
+
+    if result.RowsAffected() == 0 {
+        return ErrCouldNotUpdate
     }
 
     return nil
