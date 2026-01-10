@@ -31,21 +31,12 @@ func TestMain(m *testing.M) {
 
 func runBinary(args []string) (string, error) {
     cmd := exec.Command(filepath.Join(currentPath, "bin/main"), args...)
-    //cmd.Env = append(os.Environ(), "GOCOVERDIR=.coverdata")
-    var (
-        stdOut = bytes.NewBufferString("")
-        stdErr = bytes.NewBufferString("")
-    )
 
-    cmd.Stdout = stdOut
-    cmd.Stderr = stdErr
-
-    err := cmd.Run()
+    output, err := cmd.CombinedOutput()
+    stdOutString := strings.Trim(string(output), "\n")
     if err != nil {
-        return "", err
+        return stdOutString, err
     }
-
-    stdOutString := strings.Trim(stdOut.String(), "\n")
 
     return stdOutString, nil
 }
