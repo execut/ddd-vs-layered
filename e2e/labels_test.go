@@ -93,7 +93,7 @@ func TestLabelLive(t *testing.T) {
             "--id", expectedUUID,
         })
         require.NoError(t, err)
-        assert.Contains(t, expectedNewManufacturerOrganizationName, output)
+        assert.Contains(t, output, expectedNewManufacturerOrganizationName)
 
         t.Run("и не давать это делать при ошибках из предыдущих пунктов", func(t *testing.T) {
             out, err := runBinary([]string{
