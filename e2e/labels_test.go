@@ -39,6 +39,33 @@ func TestLabelLive(t *testing.T) {
         require.Error(t, err)
         assert.Contains(t, out, "попытка создать уже существующий шаблон")
     })
+    t.Run("Обновлять данные шаблона", func(t *testing.T) {
+        output, err := runBinary([]string{
+            "labels-update-template",
+            "--id", expectedUUID,
+            "--manufacturer-organization-name", expectedNewManufacturerOrganizationName,
+        })
+
+        require.NoError(t, err)
+        assert.Equal(t, "1", output)
+        output, err = runBinary([]string{
+            "labels-get-template",
+            "--id", expectedUUID,
+        })
+        require.NoError(t, err)
+        assert.Contains(t, output, expectedNewManufacturerOrganizationName)
+
+        t.Run("и не давать это делать при ошибках из предыдущих пунктов", func(t *testing.T) {
+            out, err := runBinary([]string{
+                "labels-update-template",
+                "--id", expectedUUID,
+                "--manufacturer-organization-name", "",
+            })
+
+            require.Error(t, err)
+            assert.Contains(t, out, "название организации производителя должно быть до 255 символов в длину")
+        })
+    })
     t.Run("Удалять шаблон этикетки товара по UUID", func(t *testing.T) {
         output, err := runBinary([]string{
             "labels-delete-template",
@@ -71,33 +98,6 @@ func TestLabelLive(t *testing.T) {
         t.Run("или =0", func(t *testing.T) {
             out, err := runBinary([]string{
                 "labels-create-template",
-                "--id", expectedUUID,
-                "--manufacturer-organization-name", "",
-            })
-
-            require.Error(t, err)
-            assert.Contains(t, out, "название организации производителя должно быть до 255 символов в длину")
-        })
-    })
-    t.Run("Обновлять данные шаблона", func(t *testing.T) {
-        output, err := runBinary([]string{
-            "labels-update-template",
-            "--id", expectedUUID,
-            "--manufacturer-organization-name", expectedNewManufacturerOrganizationName,
-        })
-
-        require.NoError(t, err)
-        assert.Equal(t, "1", output)
-        output, err = runBinary([]string{
-            "labels-get-template",
-            "--id", expectedUUID,
-        })
-        require.NoError(t, err)
-        assert.Contains(t, output, expectedNewManufacturerOrganizationName)
-
-        t.Run("и не давать это делать при ошибках из предыдущих пунктов", func(t *testing.T) {
-            out, err := runBinary([]string{
-                "labels-update-template",
                 "--id", expectedUUID,
                 "--manufacturer-organization-name", "",
             })
