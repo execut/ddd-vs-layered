@@ -1,6 +1,7 @@
 package e2e_test
 
 import (
+    "strings"
     "testing"
 
     "github.com/stretchr/testify/assert"
@@ -55,5 +56,27 @@ func TestLabelLive(t *testing.T) {
 
         require.Error(t, err)
         assert.Contains(t, out, "попытка удалить уже удалённый шаблон")
+    })
+    t.Run("Чтобы возвращалась уникальная ошибка при попытке создать шаблон, если длина Наименования организации производителя", func(t *testing.T) {
+        t.Run("> 255", func(t *testing.T) {
+            out, err := runBinary([]string{
+                "labels-create-template",
+                "--id", testUUID,
+                "--manufacturer-organization-name", strings.Repeat("a", 256),
+            })
+
+            require.Error(t, err)
+            assert.Contains(t, out, "название организации производителя должно быть до 255 символов в длину")
+        })
+        t.Run("или =0", func(t *testing.T) {
+            out, err := runBinary([]string{
+                "labels-create-template",
+                "--id", testUUID,
+                "--manufacturer-organization-name", "",
+            })
+
+            require.Error(t, err)
+            assert.Contains(t, out, "название организации производителя должно быть до 255 символов в длину")
+        })
     })
 }
