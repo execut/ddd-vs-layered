@@ -40,14 +40,37 @@ func (r Repository) Load(ctx context.Context, aggregate *domain2.LabelTemplate) 
 }
 
 func (r Repository) Save(ctx context.Context, aggregate *domain2.LabelTemplate) error {
-    model := LabelTemplate{
-        ID:                           aggregate.ID.UUID.String(),
-        ManufacturerOrganizationName: aggregate.ManufacturerOrganizationName.Name,
+    var (
+        createEvent *domain2.LabelTemplateCreatedEvent
+        deleteEvent *domain2.LabelTemplateDeletedEvent
+    )
+
+    for _, event := range aggregate.Events {
+        switch payload := event.(type) {
+        case domain2.LabelTemplateCreatedEvent:
+            createEvent = &payload
+        case domain2.LabelTemplateDeletedEvent:
+            deleteEvent = &payload
+        }
     }
 
-    err := r.db.Create(ctx, model)
-    if err != nil {
-        return err
+    if createEvent != nil {
+        model := LabelTemplate{
+            ID:                           aggregate.ID.UUID.String(),
+            ManufacturerOrganizationName: createEvent.ManufacturerOrganizationName.Name,
+        }
+
+        err := r.db.Create(ctx, model)
+        if err != nil {
+            return err
+        }
+    }
+
+    if deleteEvent != nil {
+        err := r.db.Delete(ctx, aggregate.ID.UUID.String())
+        if err != nil {
+            return err
+        }
     }
 
     return nil

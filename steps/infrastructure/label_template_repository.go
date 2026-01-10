@@ -12,6 +12,7 @@ import (
 
 var (
     ErrCouldNotTruncate = errors.New("could not truncate label template")
+    ErrCouldNotDelete   = errors.New("could not delete label template")
     ErrCouldNotCreate   = errors.New("could not create label template")
 )
 
@@ -74,4 +75,17 @@ func (r *LabelTemplateRepository) Load(ctx context.Context, labelTemplateID uuid
     }
 
     return template, nil
+}
+
+func (r *LabelTemplateRepository) Delete(ctx context.Context, id string) error {
+    result, err := r.conn.Exec(ctx, "DELETE FROM label_templates WHERE id=$1", id)
+    if err != nil {
+        return err
+    }
+
+    if result.RowsAffected() == 0 {
+        return ErrCouldNotDelete
+    }
+
+    return nil
 }

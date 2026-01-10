@@ -44,4 +44,10 @@ func TestApplication_Live(t *testing.T) {
         assert.JSONEq(t, `{"id":"123e4567-e89b-12d3-a456-426655440000",`+
             `"manufacturerOrganizationName":"test manufacturer organization name"}`, result)
     })
+
+    t.Run("DeleteLabelTemplate", func(t *testing.T) {
+        err := app.DeleteLabelTemplate(t.Context(), expectedUUIDValue)
+
+        require.NoError(t, err)
+    })
 }
