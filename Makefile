@@ -5,3 +5,7 @@ recreate_db:
 
 build:
 	@go build -o bin/main  steps/main.go
+
+all_checks: recreate_db build
+	DATABASE_URL=postgres://postgres@localhost:15432/labels go test ./...
+	golangci-lint run ./steps/...
