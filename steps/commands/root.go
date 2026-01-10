@@ -3,7 +3,7 @@ package commands
 import (
     "context"
 
-    labels2 "effective-architecture/steps/labels"
+    "effective-architecture/steps/labels"
     "github.com/spf13/cobra"
 )
 
@@ -17,29 +17,38 @@ var (
     name            string
 )
 
-func Execute() {
-    InitRootCmd()
-    InitCreateLabelTemplate()
+func Execute() error {
+    ctx := context.Background()
 
-    err := rootCmd.Execute()
+    service, err := NewService(ctx)
     if err != nil {
-        panic(err)
+        return err
     }
+
+    InitRootCmd()
+    InitCreateLabelTemplate(ctx, service)
+    InitDeleteLabelTemplate(ctx, service)
+    InitGetLabelTemplate(ctx, service)
+
+    err = rootCmd.Execute()
+    if err != nil {
+        return err
+    }
+
+    return nil
 }
 
 func InitRootCmd() {
     rootCmd.PersistentFlags().StringVarP(&labelTemplateID, "id", "i", "", "id")
-    rootCmd.AddCommand(createLabelTemplate)
-    rootCmd.AddCommand(getLabelTemplate)
 }
 
-func NewService(ctx context.Context) (*labels2.Service, error) {
-    repository, err := labels2.NewRepository(ctx)
+func NewService(ctx context.Context) (*labels.Service, error) {
+    repository, err := labels.NewRepository(ctx)
     if err != nil {
         return nil, err
     }
 
-    service := labels2.NewService(repository)
+    service := labels.NewService(repository)
 
     return service, nil
 }

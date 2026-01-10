@@ -9,6 +9,7 @@ type IRepository interface {
     Insert(ctx context.Context, model LabelTemplate) error
     Find(ctx context.Context, id string) (LabelTemplate, error)
     Truncate(ctx context.Context) error
+    Delete(ctx context.Context, id string) error
 }
 
 type Service struct {
@@ -47,4 +48,13 @@ func (s Service) GetLabelTemplate(ctx context.Context, id string) (string, error
     }
 
     return string(resultMarshaled), nil
+}
+
+func (s Service) DeleteLabelTemplate(ctx context.Context, id string) error {
+    err := s.repository.Delete(ctx, id)
+    if err != nil {
+        return err
+    }
+
+    return nil
 }

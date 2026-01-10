@@ -11,6 +11,7 @@ import (
 var (
     ErrCouldNotTruncate = errors.New("could not truncate label template")
     ErrCouldNotCreate   = errors.New("could not create label template")
+    ErrCouldNotDelete   = errors.New("could not delete label template")
 )
 
 type Repository struct {
@@ -69,6 +70,19 @@ func (r Repository) Truncate(ctx context.Context) error {
     `
 
     result, err := r.conn.Exec(ctx, sql)
+    if err != nil {
+        return err
+    }
+
+    if result.RowsAffected() == 0 {
+        return ErrCouldNotTruncate
+    }
+
+    return nil
+}
+
+func (r Repository) Delete(ctx context.Context, id string) error {
+    result, err := r.conn.Exec(ctx, "DELETE FROM label_templates WHERE id = $1", id)
     if err != nil {
         return err
     }

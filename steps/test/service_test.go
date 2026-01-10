@@ -4,7 +4,7 @@ import (
     "context"
     "testing"
 
-    labels2 "effective-architecture/steps/labels"
+    "effective-architecture/steps/labels"
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/require"
 )
@@ -12,9 +12,9 @@ import (
 func TestLabels_Live(t *testing.T) {
     t.Parallel()
 
-    var service *labels2.Service
+    var service *labels.Service
 
-    repository, err := labels2.NewRepository(t.Context())
+    repository, err := labels.NewRepository(t.Context())
     require.NoError(t, err)
 
     _ = repository.Truncate(context.Background())
@@ -24,7 +24,7 @@ func TestLabels_Live(t *testing.T) {
     })
 
     t.Run("New", func(t *testing.T) {
-        service = labels2.NewService(repository)
+        service = labels.NewService(repository)
         require.NotNil(t, service)
     })
 
@@ -40,5 +40,11 @@ func TestLabels_Live(t *testing.T) {
         require.NoError(t, err)
         assert.JSONEq(t, `{"id":"123e4567-e89b-12d3-a456-426655440000","manufacturerOrganizationName":`+
             `"test manufacturer organization name"}`, result)
+    })
+
+    t.Run("DeleteLabelTemplate", func(t *testing.T) {
+        err := service.DeleteLabelTemplate(t.Context(), testUUID)
+
+        require.NoError(t, err)
     })
 }
