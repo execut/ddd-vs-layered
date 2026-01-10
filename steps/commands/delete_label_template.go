@@ -8,21 +8,21 @@ import (
     "github.com/spf13/cobra"
 )
 
-func InitGetLabelTemplate(ctx context.Context, service *labels.Service) {
-    var getLabelTemplate = &cobra.Command{
-        Use:   "labels-get-template",
+func InitDeleteLabelTemplate(ctx context.Context, service *labels.Service) {
+    var deleteLabelTemplate = &cobra.Command{
+        Use:   "labels-delete-template",
         Short: "",
         RunE: func(_ *cobra.Command, _ []string) error {
-            result, err := service.GetLabelTemplate(ctx, labelTemplateID)
+            err := service.DeleteLabelTemplate(ctx, labelTemplateID)
             if err != nil {
                 return err
             }
 
-            fmt.Println(result)
+            fmt.Println("1")
 
             return nil
         },
     }
 
-    rootCmd.AddCommand(getLabelTemplate)
+    rootCmd.AddCommand(deleteLabelTemplate)
 }
