@@ -34,26 +34,17 @@ func (r Repository) Load(ctx context.Context, aggregate *domain.LabelTemplate) e
     for _, model := range modelList {
         switch model.Type {
         case "domain.LabelTemplateCreatedEvent":
-            event := domain.LabelTemplateCreatedEvent{}
-
-            err = json.Unmarshal(model.Payload, &event)
-            if err != nil {
-                return err
-            }
-
-            err = aggregate.ApplyEvent(event)
+            err = applyEvent[domain.LabelTemplateCreatedEvent](model, aggregate)
             if err != nil {
                 return err
             }
         case "domain.LabelTemplateDeletedEvent":
-            event := domain.LabelTemplateDeletedEvent{}
-
-            err = json.Unmarshal(model.Payload, &event)
+            err = applyEvent[domain.LabelTemplateDeletedEvent](model, aggregate)
             if err != nil {
                 return err
             }
-
-            err = aggregate.ApplyEvent(event)
+        case "domain.LabelTemplateUpdatedEvent":
+            err = applyEvent[domain.LabelTemplateUpdatedEvent](model, aggregate)
             if err != nil {
                 return err
             }
@@ -83,6 +74,22 @@ func (r Repository) Save(ctx context.Context, aggregate *domain.LabelTemplate) e
     }
 
     err := r.db.Save(ctx, eventModelList)
+    if err != nil {
+        return err
+    }
+
+    return nil
+}
+
+func applyEvent[T domain.LabelTemplateEvent](model EventModel, aggregate *domain.LabelTemplate) error {
+    var event T
+
+    err := json.Unmarshal(model.Payload, &event)
+    if err != nil {
+        return err
+    }
+
+    err = aggregate.ApplyEvent(event)
     if err != nil {
         return err
     }

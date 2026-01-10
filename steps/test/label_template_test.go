@@ -36,6 +36,13 @@ func TestLabelTemplate_Live(t *testing.T) {
         require.ErrorIs(t, err, domain.ErrLabelTemplateAlreadyCreated)
     })
 
+    t.Run("Обновлять данные шаблона", func(t *testing.T) {
+        err := labelTemplate.Update(expectedNewManufacturerOrganizationName)
+
+        require.NoError(t, err)
+        assert.Equal(t, expectedNewManufacturerOrganizationName, labelTemplate.ManufacturerOrganizationName)
+    })
+
     t.Run("Удалять шаблон этикетки товара по UUID", func(t *testing.T) {
         err := labelTemplate.Delete()
 

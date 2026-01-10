@@ -46,6 +46,15 @@ func TestApplication_Live(t *testing.T) {
             `"manufacturerOrganizationName":"test manufacturer organization name"}`, result)
     })
 
+    t.Run("UpdateLabelTemplate", func(t *testing.T) {
+        err := app.UpdateLabelTemplate(t.Context(), expectedUUIDValue, expectedNewManufacturerOrganizationNameValue)
+
+        require.NoError(t, err)
+        result, err := app.GetLabelTemplate(t.Context(), expectedUUIDValue)
+        require.NoError(t, err)
+        assert.Contains(t, result, expectedNewManufacturerOrganizationNameValue)
+    })
+
     t.Run("Удалять шаблон этикетки товара по UUID", func(t *testing.T) {
         err := app.DeleteLabelTemplate(t.Context(), expectedUUIDValue)
 

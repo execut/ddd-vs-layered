@@ -36,6 +36,11 @@ func Execute() error {
         return err
     }
 
+    err = InitLabelsUpdateTemplate(ctx, app)
+    if err != nil {
+        return err
+    }
+
     err = InitLabelsDeleteTemplate(ctx, app)
     if err != nil {
         return err

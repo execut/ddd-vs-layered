@@ -5,12 +5,15 @@ import (
 )
 
 const (
-    expectedUUIDValue                         = "123e4567-e89b-12d3-a456-426655440000"
-    expectedManufacturerOrganizationNameValue = "test manufacturer organization name"
+    expectedUUIDValue                            = "123e4567-e89b-12d3-a456-426655440000"
+    expectedManufacturerOrganizationNameValue    = "test manufacturer organization name"
+    expectedNewManufacturerOrganizationNameValue = "new test manufacturer organization name"
 )
 
 var (
     expectedUUID, _                         = domain2.NewLabelTemplateID(expectedUUIDValue)
     expectedManufacturerOrganizationName, _ = domain2.NewManufacturerOrganizationName(
         expectedManufacturerOrganizationNameValue)
+    expectedNewManufacturerOrganizationName, _ = domain2.NewManufacturerOrganizationName(
+        expectedNewManufacturerOrganizationNameValue)
 )

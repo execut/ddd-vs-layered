@@ -34,6 +34,15 @@ func (t *LabelTemplate) Create(manufacturerOrganizationName ManufacturerOrganiza
     return nil
 }
 
+func (t *LabelTemplate) Update(manufacturerOrganizationName ManufacturerOrganizationName) error {
+    err := t.addAndApplyEvent(LabelTemplateUpdatedEvent{ManufacturerOrganizationName: manufacturerOrganizationName})
+    if err != nil {
+        return err
+    }
+
+    return nil
+}
+
 func (t *LabelTemplate) Delete() error {
     if t.Status != LabelTemplateStatusCreated {
         return ErrLabelTemplateAlreadyDeleted
@@ -51,6 +60,8 @@ func (t *LabelTemplate) ApplyEvent(event LabelTemplateEvent) error {
     switch payload := event.(type) {
     case LabelTemplateCreatedEvent:
         t.Status = LabelTemplateStatusCreated
+        t.ManufacturerOrganizationName = payload.ManufacturerOrganizationName
+    case LabelTemplateUpdatedEvent:
         t.ManufacturerOrganizationName = payload.ManufacturerOrganizationName
     case LabelTemplateDeletedEvent:
         t.Status = LabelTemplateStatusDeleted
