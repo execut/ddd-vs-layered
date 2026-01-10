@@ -6,6 +6,7 @@ import (
 
     "effective-architecture/steps/application"
     "effective-architecture/steps/infrastructure"
+    "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/require"
 )
 
@@ -16,13 +17,12 @@ func TestApplication_Live(t *testing.T) {
         app             *application.Application
         repository, err = infrastructure.NewLabelTemplateRepository()
     )
-    if err != nil {
-        panic(err)
-    }
+    require.NoError(t, err)
+
+    _ = repository.Truncate(context.Background())
 
     t.Cleanup(func() {
-        err = repository.Truncate(context.Background())
-        _ = err
+        _ = repository.Truncate(context.Background())
     })
     t.Run("New", func(t *testing.T) {
         app, err = application.NewApplication(repository)
@@ -35,5 +35,13 @@ func TestApplication_Live(t *testing.T) {
         err := app.CreateLabelTemplate(t.Context(), expectedUUIDValue, expectedManufacturerOrganizationNameValue)
 
         require.NoError(t, err)
+    })
+
+    t.Run("GetLabelTemplate", func(t *testing.T) {
+        result, err := app.GetLabelTemplate(t.Context(), expectedUUIDValue)
+
+        require.NoError(t, err)
+        assert.JSONEq(t, `{"id":"123e4567-e89b-12d3-a456-426655440000",`+
+            `"manufacturerOrganizationName":"test manufacturer organization name"}`, result)
     })
 }
