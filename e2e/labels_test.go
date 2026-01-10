@@ -47,14 +47,13 @@ func TestLabelLive(t *testing.T) {
         require.NoError(t, err)
         assert.Equal(t, `1`, output)
     })
-    t.Run("Чтобы возвращалась уникальная ошибка при попытке создать уже существующий шаблон", func(t *testing.T) {
-        _, err := runBinary([]string{
-            "labels-create-template",
+    t.Run("Чтобы возвращалась уникальная ошибка при попытке удалить уже удалённый шаблон", func(t *testing.T) {
+        out, err := runBinary([]string{
+            "labels-delete-template",
             "--id", testUUID,
-            "--manufacturer-organization-name", testManufacturerOrganizationName,
         })
 
-        expectedErrorMessage := "Попытка создать уже существующий шаблон"
-        require.Errorf(t, err, expectedErrorMessage)
+        require.Error(t, err)
+        assert.Contains(t, out, "попытка удалить уже удалённый шаблон")
     })
 }
