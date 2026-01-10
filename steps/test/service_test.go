@@ -5,6 +5,7 @@ import (
     "testing"
 
     labels2 "effective-architecture/steps/labels"
+    "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/require"
 )
 
@@ -15,6 +16,9 @@ func TestLabels_Live(t *testing.T) {
 
     repository, err := labels2.NewRepository(t.Context())
     require.NoError(t, err)
+
+    _ = repository.Truncate(context.Background())
+
     t.Cleanup(func() {
         _ = repository.Truncate(context.Background())
     })
@@ -28,5 +32,13 @@ func TestLabels_Live(t *testing.T) {
         err := service.CreateLabelTemplate(t.Context(), testUUID, testManufacturerOrganizationName)
 
         require.NoError(t, err)
+    })
+
+    t.Run("GetLabelTemplate", func(t *testing.T) {
+        result, err := service.GetLabelTemplate(t.Context(), testUUID)
+
+        require.NoError(t, err)
+        assert.JSONEq(t, `{"id":"123e4567-e89b-12d3-a456-426655440000","manufacturerOrganizationName":`+
+            `"test manufacturer organization name"}`, result)
     })
 }
