@@ -27,6 +27,7 @@ func Execute() error {
 
     InitRootCmd()
     InitCreateLabelTemplate(ctx, service)
+    InitUpdateLabelTemplate(ctx, service)
     InitDeleteLabelTemplate(ctx, service)
     InitGetLabelTemplate(ctx, service)
 
