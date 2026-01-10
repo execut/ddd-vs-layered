@@ -2,24 +2,27 @@ package infrastructure
 
 import (
     "context"
+    "encoding/json"
     "errors"
+    "fmt"
+    "time"
 
-    domain2 "effective-architecture/steps/domain"
+    "effective-architecture/steps/domain"
     "github.com/jackc/pgx/v5"
 )
 
 type Repository struct {
-    db *LabelTemplateRepository
+    db *EventsRepository
 }
 
-func NewRepository(db *LabelTemplateRepository) *Repository {
+func NewRepository(db *EventsRepository) *Repository {
     return &Repository{
         db: db,
     }
 }
 
-func (r Repository) Load(ctx context.Context, aggregate *domain2.LabelTemplate) error {
-    model, err := r.db.Load(ctx, aggregate.ID.UUID)
+func (r Repository) Load(ctx context.Context, aggregate *domain.LabelTemplate) error {
+    modelList, err := r.db.Load(ctx, aggregate.ID.UUID)
     if err != nil {
         if errors.Is(err, pgx.ErrNoRows) {
             return nil
@@ -28,49 +31,50 @@ func (r Repository) Load(ctx context.Context, aggregate *domain2.LabelTemplate) 
         return err
     }
 
-    domainManufacturerOrganizationName, err := domain2.NewManufacturerOrganizationName(
-        model.ManufacturerOrganizationName)
-    if err != nil {
-        return err
-    }
+    for _, model := range modelList {
+        switch model.Type {
+        case "domain.LabelTemplateCreatedEvent":
+            event := domain.LabelTemplateCreatedEvent{}
 
-    aggregate.ManufacturerOrganizationName = domainManufacturerOrganizationName
+            err = json.Unmarshal(model.Payload, &event)
+            if err != nil {
+                return err
+            }
+
+            err = aggregate.ApplyEvent(event)
+            if err != nil {
+                return err
+            }
+        case "domain.LabelTemplateDeletedEvent":
+            continue
+        }
+    }
 
     return nil
 }
 
-func (r Repository) Save(ctx context.Context, aggregate *domain2.LabelTemplate) error {
-    var (
-        createEvent *domain2.LabelTemplateCreatedEvent
-        deleteEvent *domain2.LabelTemplateDeletedEvent
-    )
+func (r Repository) Save(ctx context.Context, aggregate *domain.LabelTemplate) error {
+    eventModelList := make([]EventModel, 0, len(aggregate.Events))
 
     for _, event := range aggregate.Events {
-        switch payload := event.(type) {
-        case domain2.LabelTemplateCreatedEvent:
-            createEvent = &payload
-        case domain2.LabelTemplateDeletedEvent:
-            deleteEvent = &payload
-        }
-    }
-
-    if createEvent != nil {
-        model := LabelTemplate{
-            ID:                           aggregate.ID.UUID.String(),
-            ManufacturerOrganizationName: createEvent.ManufacturerOrganizationName.Name,
-        }
-
-        err := r.db.Create(ctx, model)
+        payload, err := json.Marshal(event)
         if err != nil {
             return err
         }
+
+        eventModel := EventModel{
+            Type:        fmt.Sprintf("%T", event),
+            AggregateID: aggregate.ID.UUID.String(),
+            Payload:     payload,
+            CreatedAt:   time.Now(),
+        }
+
+        eventModelList = append(eventModelList, eventModel)
     }
 
-    if deleteEvent != nil {
-        err := r.db.Delete(ctx, aggregate.ID.UUID.String())
-        if err != nil {
-            return err
-        }
+    err := r.db.Save(ctx, eventModelList)
+    if err != nil {
+        return err
     }
 
     return nil

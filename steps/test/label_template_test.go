@@ -29,4 +29,10 @@ func TestLabelTemplate_Live(t *testing.T) {
         require.NoError(t, err)
         assert.Equal(t, expectedManufacturerOrganizationName, labelTemplate.ManufacturerOrganizationName)
     })
+
+    t.Run("Чтобы возвращалась уникальная ошибка при попытке создать уже существующий шаблон", func(t *testing.T) {
+        err := labelTemplate.Create(expectedManufacturerOrganizationName)
+
+        require.ErrorIs(t, err, domain.ErrLabelTemplateAlreadyCreated)
+    })
 }

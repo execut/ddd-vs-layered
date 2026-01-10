@@ -12,7 +12,7 @@ type Application struct {
     repository domain2.IRepository
 }
 
-func NewApplication(repository *infrastructure2.LabelTemplateRepository) (*Application, error) {
+func NewApplication(repository *infrastructure2.EventsRepository) (*Application, error) {
     return &Application{
         repository: infrastructure2.NewRepository(repository),
     }, nil

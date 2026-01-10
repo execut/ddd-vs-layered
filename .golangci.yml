@@ -72,7 +72,6 @@ linters:
     - misspell
     - mnd
     - modernize
-    - musttag
     - nakedret
     - nestif
     - nilerr
@@ -122,6 +121,7 @@ linters:
     - wrapcheck
     - tparallel
     - paralleltest
+    - musttag
   # All available settings of specific linters.
   settings:
     wsl_v5:

@@ -21,7 +21,7 @@ var (
 func Execute() error {
     ctx := context.Background()
 
-    repository, err := infrastructure.NewLabelTemplateRepository()
+    repository, err := infrastructure.NewEventsRepository()
     if err != nil {
         panic(err)
     }

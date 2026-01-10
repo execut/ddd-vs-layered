@@ -15,7 +15,7 @@ func TestApplication_Live(t *testing.T) {
 
     var (
         app             *application.Application
-        repository, err = infrastructure.NewLabelTemplateRepository()
+        repository, err = infrastructure.NewEventsRepository()
     )
     require.NoError(t, err)
 
