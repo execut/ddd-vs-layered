@@ -1,10 +1,16 @@
 package main
 
-import "effective-architecture/steps/commands"
+import (
+    "fmt"
+    "os"
+
+    "effective-architecture/steps/commands"
+)
 
 func main() {
     err := commands.Execute()
     if err != nil {
-        panic(err)
+        fmt.Fprintln(os.Stderr, err)
+        os.Exit(1)
     }
 }
