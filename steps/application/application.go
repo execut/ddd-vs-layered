@@ -4,37 +4,27 @@ import (
     "context"
     "encoding/json"
 
-    domain2 "effective-architecture/steps/domain"
-    infrastructure2 "effective-architecture/steps/infrastructure"
+    "effective-architecture/steps/domain"
+    "effective-architecture/steps/infrastructure"
 )
 
 type Application struct {
-    repository domain2.IRepository
+    repository domain.IRepository
 }
 
-func NewApplication(repository *infrastructure2.EventsRepository) (*Application, error) {
+func NewApplication(repository *infrastructure.EventsRepository) (*Application, error) {
     return &Application{
-        repository: infrastructure2.NewRepository(repository),
+        repository: infrastructure.NewRepository(repository),
     }, nil
 }
 
-func (a *Application) CreateLabelTemplate(ctx context.Context, uuid string, manufacturerOrganizationName string) error {
-    domainUUID, err := domain2.NewLabelTemplateID(uuid)
+func (a *Application) CreateLabelTemplate(ctx context.Context, id string, manufacturerOrganizationName string) error {
+    domainLabel, err := a.loadLabelTemplate(ctx, id)
     if err != nil {
         return err
     }
 
-    domainLabel, err := domain2.NewLabelTemplate(domainUUID)
-    if err != nil {
-        return err
-    }
-
-    err = a.repository.Load(ctx, domainLabel)
-    if err != nil {
-        return err
-    }
-
-    domainManufacturerOrganizationName, err := domain2.NewManufacturerOrganizationName(manufacturerOrganizationName)
+    domainManufacturerOrganizationName, err := domain.NewManufacturerOrganizationName(manufacturerOrganizationName)
     if err != nil {
         return err
     }
@@ -52,18 +42,8 @@ func (a *Application) CreateLabelTemplate(ctx context.Context, uuid string, manu
     return nil
 }
 
-func (a *Application) GetLabelTemplate(ctx context.Context, uuid string) (string, error) {
-    domainUUID, err := domain2.NewLabelTemplateID(uuid)
-    if err != nil {
-        return "", err
-    }
-
-    domainLabel, err := domain2.NewLabelTemplate(domainUUID)
-    if err != nil {
-        return "", err
-    }
-
-    err = a.repository.Load(ctx, domainLabel)
+func (a *Application) GetLabelTemplate(ctx context.Context, id string) (string, error) {
+    domainLabel, err := a.loadLabelTemplate(ctx, id)
     if err != nil {
         return "", err
     }
@@ -82,17 +62,7 @@ func (a *Application) GetLabelTemplate(ctx context.Context, uuid string) (string
 }
 
 func (a *Application) DeleteLabelTemplate(ctx context.Context, id string) error {
-    domainUUID, err := domain2.NewLabelTemplateID(id)
-    if err != nil {
-        return err
-    }
-
-    domainLabel, err := domain2.NewLabelTemplate(domainUUID)
-    if err != nil {
-        return err
-    }
-
-    err = a.repository.Load(ctx, domainLabel)
+    domainLabel, err := a.loadLabelTemplate(ctx, id)
     if err != nil {
         return err
     }
@@ -108,6 +78,49 @@ func (a *Application) DeleteLabelTemplate(ctx context.Context, id string) error 
     }
 
     return nil
+}
+
+func (a *Application) UpdateLabelTemplate(ctx context.Context, uuid string, manufacturerOrganizationName string) error {
+    domainLabel, err := a.loadLabelTemplate(ctx, uuid)
+    if err != nil {
+        return err
+    }
+
+    newDomainManufacturerOrganizationName, err := domain.NewManufacturerOrganizationName(manufacturerOrganizationName)
+    if err != nil {
+        return err
+    }
+
+    err = domainLabel.Update(newDomainManufacturerOrganizationName)
+    if err != nil {
+        return err
+    }
+
+    err = a.repository.Save(ctx, domainLabel)
+    if err != nil {
+        return err
+    }
+
+    return nil
+}
+
+func (a *Application) loadLabelTemplate(ctx context.Context, uuid string) (*domain.LabelTemplate, error) {
+    domainUUID, err := domain.NewLabelTemplateID(uuid)
+    if err != nil {
+        return nil, err
+    }
+
+    domainLabel, err := domain.NewLabelTemplate(domainUUID)
+    if err != nil {
+        return nil, err
+    }
+
+    err = a.repository.Load(ctx, domainLabel)
+    if err != nil {
+        return nil, err
+    }
+
+    return domainLabel, nil
 }
 
 type GetLabelTemplateResponse struct {
