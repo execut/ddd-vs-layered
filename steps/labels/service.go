@@ -7,7 +7,10 @@ import (
     "strings"
 )
 
-var ErrLabelTemplateAlreadyCreated = errors.New("попытка создать уже существующий шаблон")
+var (
+    ErrLabelTemplateAlreadyCreated = errors.New("попытка создать уже существующий шаблон")
+    ErrLabelTemplateAlreadyDeleted = errors.New("попытка удалить уже удалённый шаблон")
+)
 
 type IRepository interface {
     Insert(ctx context.Context, model LabelTemplate) error
@@ -61,6 +64,10 @@ func (s Service) GetLabelTemplate(ctx context.Context, id string) (string, error
 func (s Service) DeleteLabelTemplate(ctx context.Context, id string) error {
     err := s.repository.Delete(ctx, id)
     if err != nil {
+        if errors.Is(err, ErrCouldNotDelete) {
+            return ErrLabelTemplateAlreadyDeleted
+        }
+
         return err
     }
 

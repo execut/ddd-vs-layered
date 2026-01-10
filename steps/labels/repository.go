@@ -88,7 +88,7 @@ func (r Repository) Delete(ctx context.Context, id string) error {
     }
 
     if result.RowsAffected() == 0 {
-        return ErrCouldNotTruncate
+        return ErrCouldNotDelete
     }
 
     return nil
