@@ -12,7 +12,6 @@ import (
 
 var (
     ErrCouldNotTruncate = errors.New("could not truncate label template")
-    ErrCouldNotDelete   = errors.New("could not delete label template")
     ErrCouldNotCreate   = errors.New("could not create label template")
 )
 
@@ -49,13 +48,14 @@ func (r *EventsRepository) Save(ctx context.Context, modelList []EventModel) err
 }
 
 func (r *EventsRepository) Truncate(ctx context.Context) error {
-    result, err := r.conn.Exec(ctx, "TRUNCATE label_templates_events")
+    _, err := r.conn.Exec(ctx, "TRUNCATE label_templates_events")
     if err != nil {
         return err
     }
 
-    if result.RowsAffected() == 0 {
-        return ErrCouldNotTruncate
+    _, err = r.conn.Exec(ctx, "TRUNCATE label_templates_history")
+    if err != nil {
+        return err
     }
 
     return nil

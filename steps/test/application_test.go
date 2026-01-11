@@ -7,6 +7,7 @@ import (
     "effective-architecture/steps/application"
     "effective-architecture/steps/domain"
     "effective-architecture/steps/infrastructure"
+    "effective-architecture/steps/infrastructure/history"
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/require"
 )
@@ -26,7 +27,12 @@ func TestApplication_Live(t *testing.T) {
         _ = repository.Truncate(context.Background())
     })
     t.Run("New", func(t *testing.T) {
-        app, err = application.NewApplication(repository)
+        historyRepository, err := history.NewRepository()
+        if err != nil {
+            panic(err)
+        }
+
+        app, err = application.NewApplication(repository, historyRepository)
 
         require.NoError(t, err)
         require.NotNil(t, app)
@@ -75,5 +81,31 @@ func TestApplication_Live(t *testing.T) {
         err := app.DeleteLabelTemplate(t.Context(), expectedUUIDValue)
 
         require.ErrorIs(t, err, domain.ErrLabelTemplateAlreadyDeleted)
+    })
+
+    t.Run("Чтобы писалась история операций над шаблонами с возможностью выводить все"+
+        " данные в json", func(t *testing.T) {
+        out, err := app.LabelTemplateHistoryList(t.Context(), expectedUUIDValue)
+
+        require.NoError(t, err)
+        assert.JSONEq(t, `
+    [{
+       "orderKey": 1,
+       "action": "created",
+       "newManufacturerOrganizationName": "test manufacturer organization name"
+    },
+    {
+       "orderKey": 2,
+       "action": "updated",
+       "newManufacturerOrganizationName": "new test manufacturer organization name",
+       "newManufacturerOrganizationAddress": "test manufacturer organization address",
+       "newManufacturerEmail": "test@test.com",
+       "newManufacturerSite": "https://test.com"
+    },
+    {
+       "orderKey": 3,
+       "action": "deleted"
+    }]
+    `, out)
     })
 }
