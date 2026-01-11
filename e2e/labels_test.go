@@ -272,7 +272,7 @@ func TestLabelLive(t *testing.T) {
     "order_key": "4",
     "action": "created",
     "new_manufacturer_organization_name": "test manufacturer organization name",
-    "new_manufacturer_organization_address": "test manufacturer organization address"
+    "new_manufacturer_organization_address": "test manufacturer organization address",
     "new_manufacturer_email": "test@test.com",
     "new_manufacturer_site": "https://test.com"
 },
@@ -280,7 +280,7 @@ func TestLabelLive(t *testing.T) {
     "order_key": "5",
     "action": "updated",
     "new_manufacturer_organization_name": "new test manufacturer organization name",
-    "new_manufacturer_organization_address": "new test manufacturer organization address"
+    "new_manufacturer_organization_address": "new test manufacturer organization address",
     "new_manufacturer_email": "new-test@test.com",
     "new_manufacturer_site": "https://new-test.com"
 },
