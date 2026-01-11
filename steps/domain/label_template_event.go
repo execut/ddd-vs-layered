@@ -3,11 +3,11 @@ package domain
 type LabelTemplateEvent any
 
 type LabelTemplateCreatedEvent struct {
-    ManufacturerOrganizationName ManufacturerOrganizationName
+    Manufacturer Manufacturer
 }
 
 type LabelTemplateUpdatedEvent struct {
-    ManufacturerOrganizationName ManufacturerOrganizationName
+    Manufacturer Manufacturer
 }
 
 type LabelTemplateDeletedEvent struct {

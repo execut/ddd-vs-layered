@@ -25,7 +25,7 @@ func InitLabelsDeleteTemplate(ctx context.Context, app *application.Application)
         },
     }
 
-    deleteLabelTemplateCmd.PersistentFlags().StringVarP(&name, "manufacturer-organization-name",
+    deleteLabelTemplateCmd.PersistentFlags().StringVarP(&organizationName, "manufacturer-organization-name",
         "m", "", "manufacturer-organization-name")
 
     rootCmd.AddCommand(deleteLabelTemplateCmd)

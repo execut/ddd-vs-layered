@@ -8,10 +8,10 @@ var (
 )
 
 type LabelTemplate struct {
-    Status                       LabelTemplateStatus
-    ManufacturerOrganizationName ManufacturerOrganizationName
-    ID                           LabelTemplateID
-    Events                       []LabelTemplateEvent
+    Status       LabelTemplateStatus
+    Manufacturer Manufacturer
+    ID           LabelTemplateID
+    Events       []LabelTemplateEvent
 }
 
 func NewLabelTemplate(id LabelTemplateID) (*LabelTemplate, error) {
@@ -21,12 +21,12 @@ func NewLabelTemplate(id LabelTemplateID) (*LabelTemplate, error) {
     }, nil
 }
 
-func (t *LabelTemplate) Create(manufacturerOrganizationName ManufacturerOrganizationName) error {
-    if t.Status != LabelTemplateStatusDraft {
+func (t *LabelTemplate) Create(manufacturer Manufacturer) error {
+    if t.Status != LabelTemplateStatusDraft && t.Status != LabelTemplateStatusDeleted {
         return ErrLabelTemplateAlreadyCreated
     }
 
-    err := t.addAndApplyEvent(LabelTemplateCreatedEvent{ManufacturerOrganizationName: manufacturerOrganizationName})
+    err := t.addAndApplyEvent(LabelTemplateCreatedEvent{Manufacturer: manufacturer})
     if err != nil {
         return err
     }
@@ -34,8 +34,8 @@ func (t *LabelTemplate) Create(manufacturerOrganizationName ManufacturerOrganiza
     return nil
 }
 
-func (t *LabelTemplate) Update(manufacturerOrganizationName ManufacturerOrganizationName) error {
-    err := t.addAndApplyEvent(LabelTemplateUpdatedEvent{ManufacturerOrganizationName: manufacturerOrganizationName})
+func (t *LabelTemplate) Update(manufacturer Manufacturer) error {
+    err := t.addAndApplyEvent(LabelTemplateUpdatedEvent{Manufacturer: manufacturer})
     if err != nil {
         return err
     }
@@ -60,9 +60,9 @@ func (t *LabelTemplate) ApplyEvent(event LabelTemplateEvent) error {
     switch payload := event.(type) {
     case LabelTemplateCreatedEvent:
         t.Status = LabelTemplateStatusCreated
-        t.ManufacturerOrganizationName = payload.ManufacturerOrganizationName
+        t.Manufacturer = payload.Manufacturer
     case LabelTemplateUpdatedEvent:
-        t.ManufacturerOrganizationName = payload.ManufacturerOrganizationName
+        t.Manufacturer = payload.Manufacturer
     case LabelTemplateDeletedEvent:
         t.Status = LabelTemplateStatusDeleted
     }
