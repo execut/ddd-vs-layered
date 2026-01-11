@@ -66,6 +66,56 @@ func TestLabelLive(t *testing.T) {
             assert.Contains(t, out, "название организации производителя должно быть до 255 символов в длину")
         })
     })
+    t.Run("Указывать и получать поля Адрес, Email, сайт", func(t *testing.T) {
+        t.Run("при создании", func(t *testing.T) {
+            output, err := runBinary([]string{
+                "labels-create-template",
+                "--id", expectedUUID,
+                "--manufacturer-organization-name", expectedManufacturerOrganizationName,
+                "--manufacturer-organization-address", expectedManufacturerOrganizationAddress,
+                "--manufacturer-email", expectedManufacturerEmail,
+                "--manufacturer-site", expectedManufacturerSite,
+            })
+
+            require.NoError(t, err)
+            assert.Equal(t, "1", output)
+            output, err = runBinary([]string{
+                "labels-get-template",
+                "--id", expectedUUID,
+            })
+
+            require.NoError(t, err)
+            assert.JSONEq(t, `
+{
+    "id":"123e4567-e89b-12d3-a456-426655440000",
+    "manufacturerOrganizationName": "test manufacturer organization name",
+    "manufacturerOrganizationAddress": "test manufacturer organization address",
+    "manufacturerEmail": "test.com",
+    "manufacturerSite": "test@test.com"
+}`, output)
+        })
+        t.Run("и обновлении", func(t *testing.T) {
+            output, err := runBinary([]string{
+                "labels-update-template",
+                "--id", expectedUUID,
+                "--manufacturer-organization-name", expectedNewManufacturerOrganizationName,
+                "--manufacturer-organization-address", expectedNewManufacturerOrganizationAddress,
+                "--manufacturer-email", expectedNewManufacturerEmail,
+                "--manufacturer-site", expectedNewManufacturerSite,
+            })
+
+            require.NoError(t, err)
+            assert.Equal(t, "1", output)
+            output, err = runBinary([]string{
+                "labels-get-template",
+                "--id", expectedUUID,
+            })
+            require.NoError(t, err)
+            assert.Contains(t, output, expectedNewManufacturerOrganizationAddress)
+            assert.Contains(t, output, expectedNewManufacturerEmail)
+            assert.Contains(t, output, expectedNewManufacturerSite)
+        })
+    })
     t.Run("Удалять шаблон этикетки товара по UUID", func(t *testing.T) {
         output, err := runBinary([]string{
             "labels-delete-template",
