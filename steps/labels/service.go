@@ -4,6 +4,8 @@ import (
     "context"
     "encoding/json"
     "errors"
+    "net/mail"
+    "net/url"
     "strings"
 )
 
@@ -12,6 +14,11 @@ var (
     ErrLabelTemplateAlreadyDeleted                    = errors.New("попытка удалить уже удалённый шаблон")
     ErrLabelTemplateWrongManufacturerOrganizationName = errors.New("название организации производителя должно " +
         "быть до 255 символов в длину")
+    ErrLabelTemplateManufacturerOrganizationAddressWrongLen = errors.New("адрес должен быть до 255 символов в длину")
+    ErrLabelTemplateManufacturerEmailWrongLen               = errors.New("email должен быть до 255 символов в длину")
+    ErrLabelTemplateManufacturerSiteWrongLen                = errors.New("сайт должен быть до 255 символов в длину")
+    ErrLabelTemplateManufacturerSiteWrongFormat             = errors.New("сайт имеет не корректный формат")
+    ErrLabelTemplateManufacturerEmailWrongFormat            = errors.New("email имеет не корректный формат")
 )
 
 type IRepository interface {
@@ -34,17 +41,17 @@ func NewService(repository IRepository) *Service {
 
 func (s Service) CreateLabelTemplate(ctx context.Context, labelTemplateID string,
     manufacturer Manufacturer) error {
-    err := s.validateVarchar(manufacturer.OrganizationName)
-    if err != nil {
-        return err
-    }
-
     model := LabelTemplate{
         ID:                              labelTemplateID,
         ManufacturerOrganizationName:    manufacturer.OrganizationName,
         ManufacturerOrganizationAddress: manufacturer.OrganizationAddress,
         ManufacturerEmail:               manufacturer.Email,
         ManufacturerSite:                manufacturer.Site,
+    }
+
+    err := s.validateManufacturer(manufacturer)
+    if err != nil {
+        return err
     }
 
     err = s.repository.Insert(ctx, model)
@@ -61,17 +68,17 @@ func (s Service) CreateLabelTemplate(ctx context.Context, labelTemplateID string
 
 func (s Service) UpdateLabelTemplate(ctx context.Context, labelTemplateID string,
     manufacturer Manufacturer) error {
-    err := s.validateVarchar(manufacturer.OrganizationName)
-    if err != nil {
-        return err
-    }
-
     model := LabelTemplate{
         ID:                              labelTemplateID,
         ManufacturerOrganizationName:    manufacturer.OrganizationName,
         ManufacturerOrganizationAddress: manufacturer.OrganizationAddress,
         ManufacturerEmail:               manufacturer.Email,
         ManufacturerSite:                manufacturer.Site,
+    }
+
+    err := s.validateManufacturer(manufacturer)
+    if err != nil {
+        return err
     }
 
     err = s.repository.Update(ctx, model)
@@ -119,9 +126,36 @@ func (s Service) DeleteLabelTemplate(ctx context.Context, labelTemplateID string
     return nil
 }
 
-func (s Service) validateVarchar(manufacturerOrganizationName string) error {
-    if len(manufacturerOrganizationName) > 255 || len(manufacturerOrganizationName) == 0 {
+func (s Service) validateManufacturer(manufacturer Manufacturer) error {
+    const varcharLimit = 255
+    if len(manufacturer.OrganizationName) > varcharLimit || len(manufacturer.OrganizationName) == 0 {
         return ErrLabelTemplateWrongManufacturerOrganizationName
+    }
+
+    if len(manufacturer.OrganizationAddress) > varcharLimit {
+        return ErrLabelTemplateManufacturerOrganizationAddressWrongLen
+    }
+
+    if len(manufacturer.Email) > varcharLimit {
+        return ErrLabelTemplateManufacturerEmailWrongLen
+    }
+
+    if len(manufacturer.Site) > varcharLimit {
+        return ErrLabelTemplateManufacturerSiteWrongLen
+    }
+
+    if len(manufacturer.Email) > 0 {
+        _, err := mail.ParseAddress(manufacturer.Email)
+        if err != nil {
+            return ErrLabelTemplateManufacturerEmailWrongFormat
+        }
+    }
+
+    if len(manufacturer.Site) > 0 {
+        _, err := url.ParseRequestURI(manufacturer.Site)
+        if err != nil {
+            return ErrLabelTemplateManufacturerSiteWrongFormat
+        }
     }
 
     return nil

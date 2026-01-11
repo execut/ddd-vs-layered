@@ -6,11 +6,11 @@ const (
     expectedUUID                               = "123e4567-e89b-12d3-a456-426655440000"
     expectedManufacturerOrganizationName       = "test manufacturer organization name"
     expectedManufacturerOrganizationAddress    = "test manufacturer organization address"
-    expectedManufacturerSite                   = "test.com"
+    expectedManufacturerSite                   = "https://test.com"
     expectedManufacturerEmail                  = "email@test.com"
     expectedNewManufacturerOrganizationName    = "new test manufacturer organization name"
     expectedNewManufacturerOrganizationAddress = "new test manufacturer organization address"
-    expectedNewManufacturerSite                = "new-test.com"
+    expectedNewManufacturerSite                = "https://new-test.com"
     expectedNewManufacturerEmail               = "new-email@test.com"
 )
 

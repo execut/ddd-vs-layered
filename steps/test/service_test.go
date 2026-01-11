@@ -119,4 +119,102 @@ func TestLabels_Live(t *testing.T) {
             assert.Contains(t, result, expectedNewManufacturerSite)
         })
     })
+
+    t.Run("При создании шаблона возвращать ошибку с понятным описанием", func(t *testing.T) {
+        type args struct {
+            fieldName    string
+            manufacturer labels.Manufacturer
+            err          error
+        }
+
+        t.Run("если длина следующих полей >255 или = 0", func(t *testing.T) {
+            tests := []args{
+                {
+                    fieldName: "Адрес >255",
+                    manufacturer: labels.Manufacturer{
+                        OrganizationAddress: strings.Repeat("a", 256),
+                        Email:               expectedManufacturerEmail,
+                        Site:                expectedManufacturerSite,
+                    },
+                    err: labels.ErrLabelTemplateManufacturerOrganizationAddressWrongLen,
+                },
+                {
+                    fieldName: "Email >255",
+                    manufacturer: labels.Manufacturer{
+                        OrganizationAddress: expectedManufacturerOrganizationAddress,
+                        Email:               strings.Repeat("a", 256-9) + "@test.com",
+                        Site:                expectedManufacturerSite,
+                    },
+                    err: labels.ErrLabelTemplateManufacturerEmailWrongLen,
+                },
+                {
+                    fieldName: "Сайт >255",
+                    manufacturer: labels.Manufacturer{
+                        OrganizationAddress: expectedManufacturerOrganizationAddress,
+                        Email:               expectedManufacturerEmail,
+                        Site:                strings.Repeat("a", 256-4) + ".com",
+                    },
+                    err: labels.ErrLabelTemplateManufacturerSiteWrongLen,
+                },
+            }
+            for _, testForCreateLabel := range tests {
+                manufacturer := testForCreateLabel.manufacturer
+                manufacturer.OrganizationName = expectedManufacturerOrganizationName
+
+                err = service.CreateLabelTemplate(t.Context(), expectedUUID, manufacturer)
+
+                require.ErrorIs(t, err, testForCreateLabel.err)
+            }
+
+            for _, testForUpdateLabel := range tests {
+                manufacturer := testForUpdateLabel.manufacturer
+                manufacturer.OrganizationName = expectedManufacturerOrganizationName
+
+                err = service.UpdateLabelTemplate(t.Context(), expectedUUID, manufacturer)
+
+                require.ErrorIs(t, err, testForUpdateLabel.err)
+            }
+        })
+
+        t.Run("если формат не корректный", func(t *testing.T) {
+            tests := []args{
+                {
+                    fieldName: "Email",
+                    manufacturer: labels.Manufacturer{
+                        OrganizationAddress: expectedManufacturerOrganizationAddress,
+                        Email:               "asdasdsas",
+                        Site:                expectedManufacturerSite,
+                    },
+                    err: labels.ErrLabelTemplateManufacturerEmailWrongFormat,
+                },
+                {
+                    fieldName: "Сайт",
+                    manufacturer: labels.Manufacturer{
+                        OrganizationAddress: expectedManufacturerOrganizationAddress,
+                        Email:               expectedManufacturerEmail,
+                        Site:                "asdasdadasas",
+                    },
+                    err: labels.ErrLabelTemplateManufacturerSiteWrongFormat,
+                },
+            }
+
+            for _, testForCreateLabel := range tests {
+                manufacturer := testForCreateLabel.manufacturer
+                manufacturer.OrganizationName = expectedManufacturerOrganizationName
+
+                err = service.CreateLabelTemplate(t.Context(), expectedUUID, manufacturer)
+
+                require.ErrorIs(t, err, testForCreateLabel.err)
+            }
+
+            for _, testForUpdateLabel := range tests {
+                manufacturer := testForUpdateLabel.manufacturer
+                manufacturer.OrganizationName = expectedManufacturerOrganizationName
+
+                err = service.UpdateLabelTemplate(t.Context(), expectedUUID, manufacturer)
+
+                require.ErrorIs(t, err, testForUpdateLabel.err)
+            }
+        })
+    })
 }
