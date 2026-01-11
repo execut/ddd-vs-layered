@@ -30,13 +30,13 @@ func TestLabels_Live(t *testing.T) {
     })
 
     t.Run("CreateLabelTemplate", func(t *testing.T) {
-        err := service.CreateLabelTemplate(t.Context(), expectedUUID, expectedManufacturerOrganizationName)
+        err := service.CreateLabelTemplate(t.Context(), expectedUUID, expectedManufacturer)
 
         require.NoError(t, err)
     })
 
     t.Run("Чтобы возвращалась уникальная ошибка при попытке создать уже существующий шаблон", func(t *testing.T) {
-        err := service.CreateLabelTemplate(t.Context(), expectedUUID, expectedManufacturerOrganizationName)
+        err := service.CreateLabelTemplate(t.Context(), expectedUUID, expectedManufacturer)
 
         require.ErrorIs(t, err, labels.ErrLabelTemplateAlreadyCreated)
     })
@@ -45,12 +45,12 @@ func TestLabels_Live(t *testing.T) {
         result, err := service.GetLabelTemplate(t.Context(), expectedUUID)
 
         require.NoError(t, err)
-        assert.JSONEq(t, `{"id":"123e4567-e89b-12d3-a456-426655440000","manufacturerOrganizationName":`+
-            `"test manufacturer organization name"}`, result)
+        assert.JSONEq(t, `{"id":"123e4567-e89b-12d3-a456-426655440000","manufacturer":{"organizationName":`+
+            `"test manufacturer organization name"}}`, result)
     })
 
     t.Run("Обновлять данные шаблона", func(t *testing.T) {
-        err = service.UpdateLabelTemplate(t.Context(), expectedUUID, expectedNewManufacturerOrganizationName)
+        err = service.UpdateLabelTemplate(t.Context(), expectedUUID, expectedNewManufacturer)
 
         require.NoError(t, err)
         result, err := service.GetLabelTemplate(t.Context(), expectedUUID)
@@ -59,7 +59,9 @@ func TestLabels_Live(t *testing.T) {
         assert.Contains(t, result, expectedNewManufacturerOrganizationName)
 
         t.Run("и не давать это делать при ошибках из предыдущих пунктов", func(t *testing.T) {
-            err = service.UpdateLabelTemplate(t.Context(), expectedUUID, "")
+            err = service.UpdateLabelTemplate(t.Context(), expectedUUID, labels.Manufacturer{
+                OrganizationName: strings.Repeat("a", 256),
+            })
 
             require.ErrorIs(t, labels.ErrLabelTemplateWrongManufacturerOrganizationName, err)
         })
@@ -80,14 +82,41 @@ func TestLabels_Live(t *testing.T) {
     t.Run("Чтобы возвращалась уникальная ошибка при попытке создать шаблон, "+
         "если длина Наименования организации производителя", func(t *testing.T) {
         t.Run("> 255", func(t *testing.T) {
-            err := service.CreateLabelTemplate(t.Context(), expectedUUID, strings.Repeat("a", 256))
+            err := service.CreateLabelTemplate(t.Context(), expectedUUID, labels.Manufacturer{
+                OrganizationName: strings.Repeat("a", 256),
+            })
 
             require.ErrorIs(t, err, labels.ErrLabelTemplateWrongManufacturerOrganizationName)
         })
         t.Run("= 0", func(t *testing.T) {
-            err := service.CreateLabelTemplate(t.Context(), expectedUUID, "")
+            err := service.CreateLabelTemplate(t.Context(), expectedUUID, labels.Manufacturer{
+                OrganizationName: "",
+            })
 
             require.ErrorIs(t, err, labels.ErrLabelTemplateWrongManufacturerOrganizationName)
+        })
+    })
+
+    t.Run("Указывать и получать поля Адрес, Email, сайт", func(t *testing.T) {
+        t.Run("при создании", func(t *testing.T) {
+            err := service.CreateLabelTemplate(t.Context(), expectedUUID, expectedManufacturerWithAllFields)
+
+            require.NoError(t, err)
+            result, err := service.GetLabelTemplate(t.Context(), expectedUUID)
+            require.NoError(t, err)
+            assert.Contains(t, result, expectedManufacturerOrganizationAddress)
+            assert.Contains(t, result, expectedManufacturerEmail)
+            assert.Contains(t, result, expectedManufacturerSite)
+        })
+        t.Run("и обновлении", func(t *testing.T) {
+            err := service.UpdateLabelTemplate(t.Context(), expectedUUID, expectedNewManufacturerWithAllFields)
+
+            require.NoError(t, err)
+            result, err := service.GetLabelTemplate(t.Context(), expectedUUID)
+            require.NoError(t, err)
+            assert.Contains(t, result, expectedNewManufacturerOrganizationAddress)
+            assert.Contains(t, result, expectedNewManufacturerEmail)
+            assert.Contains(t, result, expectedNewManufacturerSite)
         })
     })
 }
