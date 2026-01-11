@@ -8,19 +8,19 @@ import (
     "github.com/stretchr/testify/require"
 )
 
-func TestNewManufacturerOrganizationName_errors(t *testing.T) {
+func TestNewOrganizationAddress_errors(t *testing.T) {
     t.Parallel()
     t.Run("Ошибка, если длина Наименования организации производителя", func(t *testing.T) {
         t.Parallel()
         t.Run(">255", func(t *testing.T) {
-            _, err := domain.NewOrganizationName(strings.Repeat("a", 256))
+            _, err := domain.NewOrganizationAddress(strings.Repeat("a", 256))
 
-            require.ErrorIs(t, err, domain.ErrManufacturerOrganizationNameWrongLen)
+            require.ErrorIs(t, err, domain.ErrManufacturerOrganizationAddressWrongLen)
         })
         t.Run("или =0", func(t *testing.T) {
-            _, err := domain.NewOrganizationName("")
+            _, err := domain.NewOrganizationAddress("")
 
-            require.ErrorIs(t, err, domain.ErrManufacturerOrganizationNameWrongLen)
+            require.ErrorIs(t, err, domain.ErrManufacturerOrganizationAddressWrongLen)
         })
     })
 }
