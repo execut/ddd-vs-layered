@@ -10,7 +10,7 @@ const (
     expectedNewManufacturerOrganizationNameValue = "new test manufacturer organization name"
     expectedManufacturerOrganizationAddressValue = "test manufacturer organization address"
     expectedManufacturerEmailValue               = "test@test.com"
-    expectedManufacturerSiteValue                = "test.com"
+    expectedManufacturerSiteValue                = "https://test.com"
 )
 
 var (
