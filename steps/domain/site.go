@@ -11,17 +11,21 @@ var (
     ErrSiteWrongFormat = errors.New("сайт имеет не корректный формат")
 )
 
-type Site string
+type Site struct {
+    Value string
+}
 
 func NewSite(value string) (Site, error) {
     if len(value) > 255 || len(value) == 0 {
-        return "", ErrSiteWrongLen
+        return Site{}, ErrSiteWrongLen
     }
 
     _, err := url.ParseRequestURI(value)
     if err != nil {
-        return "", ErrSiteWrongFormat
+        return Site{}, ErrSiteWrongFormat
     }
 
-    return Site(value), nil
+    return Site{
+        Value: value,
+    }, nil
 }

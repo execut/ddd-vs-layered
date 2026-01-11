@@ -5,6 +5,7 @@ import (
 
     "effective-architecture/steps/application"
     "effective-architecture/steps/infrastructure"
+    "effective-architecture/steps/infrastructure/history"
     "github.com/spf13/cobra"
 )
 
@@ -29,7 +30,12 @@ func Execute() error {
         panic(err)
     }
 
-    app, err := application.NewApplication(repository)
+    historyRepository, err := history.NewRepository()
+    if err != nil {
+        panic(err)
+    }
+
+    app, err := application.NewApplication(repository, historyRepository)
     if err != nil {
         panic(err)
     }
@@ -50,6 +56,11 @@ func Execute() error {
     }
 
     err = InitLabelsGetTemplate(ctx, app)
+    if err != nil {
+        return err
+    }
+
+    err = InitLabelsTemplateHistory(ctx, app)
     if err != nil {
         return err
     }

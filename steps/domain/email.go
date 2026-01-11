@@ -11,17 +11,21 @@ var (
     ErrEmailWrongFormat = errors.New("email имеет не корректный формат")
 )
 
-type Email string
+type Email struct {
+    Value string
+}
 
 func NewEmail(value string) (Email, error) {
     if len(value) > 255 || len(value) == 0 {
-        return "", ErrEmailWrongLen
+        return Email{}, ErrEmailWrongLen
     }
 
     _, err := mail.ParseAddress(value)
     if err != nil {
-        return "", ErrEmailWrongFormat
+        return Email{}, ErrEmailWrongFormat
     }
 
-    return Email(value), nil
+    return Email{
+        Value: value,
+    }, nil
 }

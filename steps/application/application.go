@@ -5,16 +5,26 @@ import (
     "encoding/json"
 
     "effective-architecture/steps/domain"
+    "effective-architecture/steps/domain/history"
     "effective-architecture/steps/infrastructure"
 )
 
 type Application struct {
-    repository domain.IRepository
+    repository        domain.IRepository
+    dispatcher        *domain.Dispatcher
+    historyRepository history.IRepository
 }
 
-func NewApplication(repository *infrastructure.EventsRepository) (*Application, error) {
+func NewApplication(repository *infrastructure.EventsRepository,
+    historyRepository history.IRepository) (*Application, error) {
+    dispatcher := domain.NewDispatcher([]domain.Subscriber{
+        history.NewSubscriber(historyRepository),
+    })
+
     return &Application{
-        repository: infrastructure.NewRepository(repository),
+        repository:        infrastructure.NewRepository(repository),
+        historyRepository: historyRepository,
+        dispatcher:        dispatcher,
     }, nil
 }
 
@@ -30,6 +40,11 @@ func (a *Application) CreateLabelTemplate(ctx context.Context, id string, manufa
     }
 
     err = domainLabel.Create(domainManufacturer)
+    if err != nil {
+        return err
+    }
+
+    err = a.dispatcher.Dispatch(ctx, domainLabel)
     if err != nil {
         return err
     }
@@ -73,6 +88,11 @@ func (a *Application) DeleteLabelTemplate(ctx context.Context, id string) error 
         return err
     }
 
+    err = a.dispatcher.Dispatch(ctx, domainLabel)
+    if err != nil {
+        return err
+    }
+
     err = a.repository.Save(ctx, domainLabel)
     if err != nil {
         return err
@@ -97,6 +117,11 @@ func (a *Application) UpdateLabelTemplate(ctx context.Context, uuid string, manu
         return err
     }
 
+    err = a.dispatcher.Dispatch(ctx, domainLabel)
+    if err != nil {
+        return err
+    }
+
     err = a.repository.Save(ctx, domainLabel)
     if err != nil {
         return err
@@ -105,13 +130,59 @@ func (a *Application) UpdateLabelTemplate(ctx context.Context, uuid string, manu
     return nil
 }
 
-func (a *Application) loadLabelTemplate(ctx context.Context, uuid string) (*domain.LabelTemplate, error) {
-    domainUUID, err := domain.NewLabelTemplateID(uuid)
+func (a *Application) LabelTemplateHistoryList(ctx context.Context, id string) (string, error) {
+    domainAggregateID, err := domain.NewLabelTemplateID(id)
+    if err != nil {
+        return "", err
+    }
+
+    domainHistoryList, err := a.historyRepository.List(ctx, domainAggregateID)
+    if err != nil {
+        return "", err
+    }
+
+    result := []LabelTemplateHistoryRow{}
+
+    for _, domainHistory := range domainHistoryList {
+        historyRow := LabelTemplateHistoryRow{
+            OrderKey: domainHistory.OrderKey,
+            Action:   domainHistory.Action,
+        }
+
+        if domainHistory.NewManufacturerOrganizationName != nil {
+            historyRow.NewManufacturerOrganizationName = domainHistory.NewManufacturerOrganizationName.Name
+        }
+
+        if domainHistory.NewManufacturerOrganizationAddress != nil {
+            historyRow.NewManufacturerOrganizationAddress = domainHistory.NewManufacturerOrganizationAddress.Address
+        }
+
+        if domainHistory.NewManufacturerEmail != nil {
+            historyRow.NewManufacturerEmail = domainHistory.NewManufacturerEmail.Value
+        }
+
+        if domainHistory.NewManufacturerSite != nil {
+            historyRow.NewManufacturerSite = domainHistory.NewManufacturerSite.Value
+        }
+
+        result = append(result, historyRow)
+    }
+
+    resultString, err := json.Marshal(result)
+    if err != nil {
+        return "", err
+    }
+
+    return string(resultString), nil
+}
+
+func (a *Application) loadLabelTemplate(ctx context.Context, id string) (*domain.LabelTemplate, error) {
+    domainID, err := domain.NewLabelTemplateID(id)
     if err != nil {
         return nil, err
     }
 
-    domainLabel, err := domain.NewLabelTemplate(domainUUID)
+    domainLabel, err := domain.NewLabelTemplate(domainID)
     if err != nil {
         return nil, err
     }
@@ -190,15 +261,15 @@ func mapManufacturerToResponse(domainManufacturer domain.Manufacturer) Manufactu
     }
 
     if domainManufacturer.OrganizationAddress != nil {
-        manufacturer.OrganizationAddress = string(*domainManufacturer.OrganizationAddress)
+        manufacturer.OrganizationAddress = domainManufacturer.OrganizationAddress.Address
     }
 
     if domainManufacturer.Site != nil {
-        manufacturer.Site = string(*domainManufacturer.Site)
+        manufacturer.Site = domainManufacturer.Site.Value
     }
 
     if domainManufacturer.Email != nil {
-        manufacturer.Email = string(*domainManufacturer.Email)
+        manufacturer.Email = domainManufacturer.Email.Value
     }
 
     return manufacturer
