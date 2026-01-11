@@ -27,7 +27,7 @@ func TestLabelLive(t *testing.T) {
         })
 
         require.NoError(t, err)
-        assert.Equal(t, `{"id":"123e4567-e89b-12d3-a456-426655440000","manufacturerOrganizationName":"test manufacturer organization name"}`, output)
+        assert.JSONEq(t, `{"id":"123e4567-e89b-12d3-a456-426655440000","manufacturer":{"organizationName":"test manufacturer organization name"}}`, output)
     })
     t.Run("Чтобы возвращалась уникальная ошибка при попытке создать уже существующий шаблон", func(t *testing.T) {
         out, err := runBinary([]string{
@@ -66,6 +66,16 @@ func TestLabelLive(t *testing.T) {
             assert.Contains(t, out, "название организации производителя должно быть до 255 символов в длину")
         })
     })
+    t.Run("Удалять шаблон этикетки товара по UUID", func(t *testing.T) {
+        output, err := runBinary([]string{
+            "labels-delete-template",
+            "--id", expectedUUID,
+        })
+
+        require.NoError(t, err)
+        assert.Equal(t, `1`, output)
+    })
+
     t.Run("Указывать и получать поля Адрес, Email, сайт", func(t *testing.T) {
         t.Run("при создании", func(t *testing.T) {
             output, err := runBinary([]string{
@@ -88,10 +98,12 @@ func TestLabelLive(t *testing.T) {
             assert.JSONEq(t, `
 {
     "id":"123e4567-e89b-12d3-a456-426655440000",
-    "manufacturerOrganizationName": "test manufacturer organization name",
-    "manufacturerOrganizationAddress": "test manufacturer organization address",
-    "manufacturerEmail": "test.com",
-    "manufacturerSite": "test@test.com"
+    "manufacturer": {
+        "organizationName": "test manufacturer organization name",
+        "organizationAddress": "test manufacturer organization address",
+        "email": "test@test.com",
+        "site": "test.com"
+    }
 }`, output)
         })
         t.Run("и обновлении", func(t *testing.T) {
@@ -116,16 +128,13 @@ func TestLabelLive(t *testing.T) {
             assert.Contains(t, output, expectedNewManufacturerSite)
         })
     })
-    t.Run("Удалять шаблон этикетки товара по UUID", func(t *testing.T) {
-        output, err := runBinary([]string{
+    t.Run("Чтобы возвращалась уникальная ошибка при попытке удалить уже удалённый шаблон", func(t *testing.T) {
+        _, err := runBinary([]string{
             "labels-delete-template",
             "--id", expectedUUID,
         })
-
         require.NoError(t, err)
-        assert.Equal(t, `1`, output)
-    })
-    t.Run("Чтобы возвращалась уникальная ошибка при попытке удалить уже удалённый шаблон", func(t *testing.T) {
+
         out, err := runBinary([]string{
             "labels-delete-template",
             "--id", expectedUUID,
