@@ -255,37 +255,37 @@ func TestLabelLive(t *testing.T) {
         require.NoError(t, err)
         assert.JSONEq(t, `
 [{
-    "order_key": "1",
+    "orderKey": 1,
     "action": "created",
-    "new_manufacturer_organization_name": "test manufacturer organization name"
+    "newManufacturerOrganizationName": "test manufacturer organization name"
 },
 {
-    "order_key": "2",
+    "orderKey": 2,
     "action": "updated",
-    "new_manufacturer_organization_name": "new test manufacturer organization name"
+    "newManufacturerOrganizationName": "new test manufacturer organization name"
 },
 {
-    "order_key": "3",
+    "orderKey": 3,
     "action": "deleted"
 },
 {
-    "order_key": "4",
+    "orderKey": 4,
     "action": "created",
-    "new_manufacturer_organization_name": "test manufacturer organization name",
-    "new_manufacturer_organization_address": "test manufacturer organization address",
-    "new_manufacturer_email": "test@test.com",
-    "new_manufacturer_site": "https://test.com"
+    "newManufacturerOrganizationName": "test manufacturer organization name",
+    "newManufacturerOrganizationAddress": "test manufacturer organization address",
+    "newManufacturerEmail": "test@test.com",
+    "newManufacturerSite": "https://test.com"
 },
 {
-    "order_key": "5",
+    "orderKey": 5,
     "action": "updated",
-    "new_manufacturer_organization_name": "new test manufacturer organization name",
-    "new_manufacturer_organization_address": "new test manufacturer organization address",
-    "new_manufacturer_email": "new-test@test.com",
-    "new_manufacturer_site": "https://new-test.com"
+    "newManufacturerOrganizationName": "new test manufacturer organization name",
+    "newManufacturerOrganizationAddress": "new test manufacturer organization address",
+    "newManufacturerEmail": "new-test@test.com",
+    "newManufacturerSite": "https://new-test.com"
 },
 {
-    "order_key": "3",
+    "orderKey": 6,
     "action": "deleted"
 }]
 `, out)
