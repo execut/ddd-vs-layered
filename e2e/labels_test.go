@@ -245,4 +245,49 @@ func TestLabelLive(t *testing.T) {
             }
         })
     })
+
+    t.Run("Чтобы писалась история операций над шаблонами с возможностью выводить все данные в json", func(t *testing.T) {
+        out, err := runBinary([]string{
+            "labels-template-history",
+            "--id", expectedUUID,
+        })
+
+        require.Error(t, err)
+        assert.JSONEq(t, `
+[{
+    "order_key": "1",
+    "action": "created",
+    "new_manufacturer_organization_name": "test manufacturer organization name"
+},
+{
+    "order_key": "2",
+    "action": "updated",
+    "new_manufacturer_organization_name": "new test manufacturer organization name"
+},
+{
+    "order_key": "3",
+    "action": "deleted"
+},
+{
+    "order_key": "4",
+    "action": "created",
+    "new_manufacturer_organization_name": "test manufacturer organization name",
+    "new_manufacturer_organization_address": "test manufacturer organization address"
+    "new_manufacturer_email": "test@test.com",
+    "new_manufacturer_site": "https://test.com"
+},
+{
+    "order_key": "5",
+    "action": "updated",
+    "new_manufacturer_organization_name": "new test manufacturer organization name",
+    "new_manufacturer_organization_address": "new test manufacturer organization address"
+    "new_manufacturer_email": "new-test@test.com",
+    "new_manufacturer_site": "https://new-test.com"
+},
+{
+    "order_key": "3",
+    "action": "deleted"
+}]
+`, out)
+    })
 }
