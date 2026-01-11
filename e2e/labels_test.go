@@ -102,7 +102,7 @@ func TestLabelLive(t *testing.T) {
         "organizationName": "test manufacturer organization name",
         "organizationAddress": "test manufacturer organization address",
         "email": "test@test.com",
-        "site": "test.com"
+        "site": "https://test.com"
     }
 }`, output)
         })
@@ -163,6 +163,86 @@ func TestLabelLive(t *testing.T) {
 
             require.Error(t, err)
             assert.Contains(t, out, "название организации производителя должно быть до 255 символов в длину")
+        })
+    })
+
+    t.Run("При создании шаблона возвращать ошибку с понятным описанием", func(t *testing.T) {
+        type args struct {
+            fieldName           string
+            organizationAddress string
+            email               string
+            site                string
+            errorMessage        string
+        }
+        t.Run("если длина следующих полей >255 или = 0", func(t *testing.T) {
+            tests := []args{
+                {
+                    fieldName:           "Адрес >255",
+                    organizationAddress: strings.Repeat("a", 256),
+                    email:               expectedManufacturerEmail,
+                    site:                expectedManufacturerSite,
+                    errorMessage:        "адрес должен быть до 255 символов в длину",
+                },
+                {
+                    fieldName:           "Email >255",
+                    organizationAddress: expectedManufacturerOrganizationAddress,
+                    email:               strings.Repeat("a", 256-9) + "@test.com",
+                    site:                expectedManufacturerSite,
+                    errorMessage:        "email должен быть до 255 символов в длину",
+                },
+                {
+                    fieldName:           "Сайт >255",
+                    organizationAddress: expectedManufacturerOrganizationAddress,
+                    email:               expectedManufacturerEmail,
+                    site:                strings.Repeat("a", 256-4) + ".com",
+                    errorMessage:        "сайт должен быть до 255 символов в длину",
+                },
+            }
+            for _, tt := range tests {
+                out, err := runBinary([]string{
+                    "labels-create-template",
+                    "--id", expectedUUID,
+                    "--manufacturer-organization-name", expectedManufacturerOrganizationName,
+                    "--manufacturer-organization-address", tt.organizationAddress,
+                    "--manufacturer-email", tt.email,
+                    "--manufacturer-site", tt.site,
+                })
+
+                require.Error(t, err)
+                assert.Contains(t, out, tt.errorMessage)
+            }
+        })
+
+        t.Run("если формат не корректный", func(t *testing.T) {
+            tests := []args{
+                {
+                    fieldName:           "Email",
+                    organizationAddress: expectedManufacturerOrganizationAddress,
+                    email:               "asdasdsas",
+                    site:                expectedManufacturerSite,
+                    errorMessage:        "email имеет не корректный формат",
+                },
+                {
+                    fieldName:           "Сайт",
+                    organizationAddress: expectedManufacturerOrganizationAddress,
+                    email:               expectedManufacturerEmail,
+                    site:                "asdasdadasas",
+                    errorMessage:        "сайт имеет не корректный формат",
+                },
+            }
+            for _, tt := range tests {
+                out, err := runBinary([]string{
+                    "labels-create-template",
+                    "--id", expectedUUID,
+                    "--manufacturer-organization-name", expectedManufacturerOrganizationName,
+                    "--manufacturer-organization-address", tt.organizationAddress,
+                    "--manufacturer-email", tt.email,
+                    "--manufacturer-site", tt.site,
+                })
+
+                require.Error(t, err)
+                assert.Contains(t, out, tt.errorMessage)
+            }
         })
     })
 }
