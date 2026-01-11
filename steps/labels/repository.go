@@ -37,11 +37,13 @@ func NewRepository(ctx context.Context) (*Repository, error) {
 
 func (r Repository) Insert(ctx context.Context, model LabelTemplate) error {
     sql := `
-        INSERT INTO label_templates (id, manufacturer_organization_name)
-        VALUES ($1, $2)
+        INSERT INTO label_templates (id, manufacturer_organization_name, manufacturer_organization_address,
+            manufacturer_email, manufacturer_site)
+        VALUES ($1, $2, $3, $4, $5)
     `
 
-    result, err := r.conn.Exec(ctx, sql, model.ID, model.ManufacturerOrganizationName)
+    result, err := r.conn.Exec(ctx, sql, model.ID, model.ManufacturerOrganizationName,
+        model.ManufacturerOrganizationAddress, model.ManufacturerEmail, model.ManufacturerSite)
     if err != nil {
         return err
     }
@@ -55,10 +57,14 @@ func (r Repository) Insert(ctx context.Context, model LabelTemplate) error {
 
 func (r Repository) Update(ctx context.Context, model LabelTemplate) error {
     sql := `
-        UPDATE label_templates SET id=$1, manufacturer_organization_name=$2 WHERE id=$1
+        UPDATE label_templates SET id=$1, manufacturer_organization_name=$2,
+            manufacturer_organization_address=$3,
+            manufacturer_email=$4,
+            manufacturer_site=$5 WHERE id=$1
     `
 
-    result, err := r.conn.Exec(ctx, sql, model.ID, model.ManufacturerOrganizationName)
+    result, err := r.conn.Exec(ctx, sql, model.ID, model.ManufacturerOrganizationName,
+        model.ManufacturerOrganizationAddress, model.ManufacturerEmail, model.ManufacturerSite)
     if err != nil {
         return err
     }
@@ -71,10 +77,12 @@ func (r Repository) Update(ctx context.Context, model LabelTemplate) error {
 }
 
 func (r Repository) Find(ctx context.Context, id string) (LabelTemplate, error) {
-    sql := "SELECT id, manufacturer_organization_name FROM label_templates WHERE id = $1"
+    sql := `SELECT id, manufacturer_organization_name, manufacturer_organization_address,
+       manufacturer_email, manufacturer_site FROM label_templates WHERE id = $1`
     model := LabelTemplate{}
 
-    err := r.conn.QueryRow(ctx, sql, id).Scan(&model.ID, &model.ManufacturerOrganizationName)
+    err := r.conn.QueryRow(ctx, sql, id).Scan(&model.ID, &model.ManufacturerOrganizationName,
+        &model.ManufacturerOrganizationAddress, &model.ManufacturerEmail, &model.ManufacturerSite)
     if err != nil {
         return LabelTemplate{}, err
     }

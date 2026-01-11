@@ -13,8 +13,11 @@ var (
         Short: "",
         Long:  ``,
     }
-    labelTemplateID string
-    name            string
+    labelTemplateID                 string
+    manufacturerOrganizationName    string
+    manufacturerOrganizationAddress string
+    manufacturerEmail               string
+    manufacturerSite                string
 )
 
 func Execute() error {
@@ -52,4 +55,15 @@ func NewService(ctx context.Context) (*labels.Service, error) {
     service := labels.NewService(repository)
 
     return service, nil
+}
+
+func initManufacturerFlags(cmd *cobra.Command) {
+    cmd.PersistentFlags().StringVarP(&manufacturerOrganizationName, "manufacturer-organization-name", "m",
+        "", "manufacturer-organization-name")
+    cmd.Flags().StringVarP(&manufacturerOrganizationAddress, "manufacturer-organization-address", "a",
+        "", "manufacturer-organization-address")
+    cmd.Flags().StringVarP(&manufacturerEmail, "manufacturer-email", "e",
+        "", "manufacturer-email")
+    cmd.Flags().StringVarP(&manufacturerSite, "manufacturer-site", "s",
+        "", "manufacturer-site")
 }

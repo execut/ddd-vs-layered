@@ -1,6 +1,9 @@
 package labels
 
 type LabelTemplate struct {
-    ID                           string `json:"id"`
-    ManufacturerOrganizationName string `json:"manufacturerOrganizationName"`
+    ID                              string
+    ManufacturerOrganizationName    string
+    ManufacturerOrganizationAddress string
+    ManufacturerEmail               string
+    ManufacturerSite                string
 }

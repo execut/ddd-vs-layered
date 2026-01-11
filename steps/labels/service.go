@@ -33,15 +33,18 @@ func NewService(repository IRepository) *Service {
 }
 
 func (s Service) CreateLabelTemplate(ctx context.Context, labelTemplateID string,
-    manufacturerOrganizationName string) error {
-    err := s.validateVarchar(manufacturerOrganizationName)
+    manufacturer Manufacturer) error {
+    err := s.validateVarchar(manufacturer.OrganizationName)
     if err != nil {
         return err
     }
 
     model := LabelTemplate{
-        ID:                           labelTemplateID,
-        ManufacturerOrganizationName: manufacturerOrganizationName,
+        ID:                              labelTemplateID,
+        ManufacturerOrganizationName:    manufacturer.OrganizationName,
+        ManufacturerOrganizationAddress: manufacturer.OrganizationAddress,
+        ManufacturerEmail:               manufacturer.Email,
+        ManufacturerSite:                manufacturer.Site,
     }
 
     err = s.repository.Insert(ctx, model)
@@ -57,15 +60,18 @@ func (s Service) CreateLabelTemplate(ctx context.Context, labelTemplateID string
 }
 
 func (s Service) UpdateLabelTemplate(ctx context.Context, labelTemplateID string,
-    manufacturerOrganizationName string) error {
-    err := s.validateVarchar(manufacturerOrganizationName)
+    manufacturer Manufacturer) error {
+    err := s.validateVarchar(manufacturer.OrganizationName)
     if err != nil {
         return err
     }
 
     model := LabelTemplate{
-        ID:                           labelTemplateID,
-        ManufacturerOrganizationName: manufacturerOrganizationName,
+        ID:                              labelTemplateID,
+        ManufacturerOrganizationName:    manufacturer.OrganizationName,
+        ManufacturerOrganizationAddress: manufacturer.OrganizationAddress,
+        ManufacturerEmail:               manufacturer.Email,
+        ManufacturerSite:                manufacturer.Site,
     }
 
     err = s.repository.Update(ctx, model)
@@ -76,13 +82,23 @@ func (s Service) UpdateLabelTemplate(ctx context.Context, labelTemplateID string
     return nil
 }
 
-func (s Service) GetLabelTemplate(ctx context.Context, id string) (string, error) {
-    model, err := s.repository.Find(ctx, id)
+func (s Service) GetLabelTemplate(ctx context.Context, labelTemplateID string) (string, error) {
+    model, err := s.repository.Find(ctx, labelTemplateID)
     if err != nil {
         return "", err
     }
 
-    resultMarshaled, err := json.Marshal(model)
+    response := GetLabelTemplateResponse{
+        ID: labelTemplateID,
+        Manufacturer: Manufacturer{
+            OrganizationName:    model.ManufacturerOrganizationName,
+            OrganizationAddress: model.ManufacturerOrganizationAddress,
+            Email:               model.ManufacturerEmail,
+            Site:                model.ManufacturerSite,
+        },
+    }
+
+    resultMarshaled, err := json.Marshal(response)
     if err != nil {
         return "", err
     }
@@ -90,8 +106,8 @@ func (s Service) GetLabelTemplate(ctx context.Context, id string) (string, error
     return string(resultMarshaled), nil
 }
 
-func (s Service) DeleteLabelTemplate(ctx context.Context, id string) error {
-    err := s.repository.Delete(ctx, id)
+func (s Service) DeleteLabelTemplate(ctx context.Context, labelTemplateID string) error {
+    err := s.repository.Delete(ctx, labelTemplateID)
     if err != nil {
         if errors.Is(err, ErrCouldNotDelete) {
             return ErrLabelTemplateAlreadyDeleted
@@ -109,4 +125,16 @@ func (s Service) validateVarchar(manufacturerOrganizationName string) error {
     }
 
     return nil
+}
+
+type Manufacturer struct {
+    OrganizationName    string `json:"organizationName"`
+    OrganizationAddress string `json:"organizationAddress,omitempty"`
+    Email               string `json:"email,omitempty"`
+    Site                string `json:"site,omitempty"`
+}
+
+type GetLabelTemplateResponse struct {
+    ID           string       `json:"id"`
+    Manufacturer Manufacturer `json:"manufacturer"`
 }

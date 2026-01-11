@@ -13,7 +13,12 @@ func InitCreateLabelTemplate(ctx context.Context, service *labels.Service) {
         Use:   "labels-create-template",
         Short: "",
         RunE: func(_ *cobra.Command, _ []string) error {
-            err := service.CreateLabelTemplate(ctx, labelTemplateID, name)
+            err := service.CreateLabelTemplate(ctx, labelTemplateID, labels.Manufacturer{
+                OrganizationName:    manufacturerOrganizationName,
+                OrganizationAddress: manufacturerOrganizationAddress,
+                Email:               manufacturerEmail,
+                Site:                manufacturerSite,
+            })
             if err != nil {
                 return err
             }
@@ -23,7 +28,7 @@ func InitCreateLabelTemplate(ctx context.Context, service *labels.Service) {
             return nil
         },
     }
-    createLabelTemplate.PersistentFlags().StringVarP(&name, "manufacturer-organization-name", "m",
-        "", "manufacturer-organization-name")
+
+    initManufacturerFlags(createLabelTemplate)
     rootCmd.AddCommand(createLabelTemplate)
 }
