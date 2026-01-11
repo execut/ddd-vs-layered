@@ -7,14 +7,14 @@ var (
         "название организации производителя должно быть до 255 символов в длину")
 )
 
-type ManufacturerOrganizationName struct {
+type OrganizationName struct {
     Name string
 }
 
-func NewManufacturerOrganizationName(name string) (ManufacturerOrganizationName, error) {
+func NewOrganizationName(name string) (OrganizationName, error) {
     if len(name) > 255 || len(name) == 0 {
-        return ManufacturerOrganizationName{}, ErrManufacturerOrganizationNameWrongLen
+        return OrganizationName{}, ErrManufacturerOrganizationNameWrongLen
     }
 
-    return ManufacturerOrganizationName{Name: name}, nil
+    return OrganizationName{Name: name}, nil
 }

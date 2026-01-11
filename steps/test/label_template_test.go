@@ -24,23 +24,23 @@ func TestLabelTemplate_Live(t *testing.T) {
     })
 
     t.Run("Create", func(t *testing.T) {
-        err := labelTemplate.Create(expectedManufacturerOrganizationName)
+        err := labelTemplate.Create(expectedManufacturer)
 
         require.NoError(t, err)
-        assert.Equal(t, expectedManufacturerOrganizationName, labelTemplate.ManufacturerOrganizationName)
+        assert.Equal(t, expectedManufacturer, labelTemplate.Manufacturer)
     })
 
     t.Run("Чтобы возвращалась уникальная ошибка при попытке создать уже существующий шаблон", func(t *testing.T) {
-        err := labelTemplate.Create(expectedManufacturerOrganizationName)
+        err := labelTemplate.Create(expectedManufacturer)
 
         require.ErrorIs(t, err, domain.ErrLabelTemplateAlreadyCreated)
     })
 
     t.Run("Обновлять данные шаблона", func(t *testing.T) {
-        err := labelTemplate.Update(expectedNewManufacturerOrganizationName)
+        err := labelTemplate.Update(expectedNewManufacturer)
 
         require.NoError(t, err)
-        assert.Equal(t, expectedNewManufacturerOrganizationName, labelTemplate.ManufacturerOrganizationName)
+        assert.Equal(t, expectedNewManufacturer, labelTemplate.Manufacturer)
     })
 
     t.Run("Удалять шаблон этикетки товара по UUID", func(t *testing.T) {
@@ -53,5 +53,12 @@ func TestLabelTemplate_Live(t *testing.T) {
         err := labelTemplate.Delete()
 
         require.ErrorIs(t, err, domain.ErrLabelTemplateAlreadyDeleted)
+    })
+
+    t.Run("CreateAgain", func(t *testing.T) {
+        err := labelTemplate.Create(expectedManufacturer)
+
+        require.NoError(t, err)
+        assert.Equal(t, expectedManufacturer, labelTemplate.Manufacturer)
     })
 }

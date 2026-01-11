@@ -14,8 +14,11 @@ var (
         Short: "",
         Long:  ``,
     }
-    labelTemplateID string
-    name            string
+    labelTemplateID     string
+    organizationName    string
+    organizationAddress string
+    site                string
+    email               string
 )
 
 func Execute() error {
@@ -59,4 +62,15 @@ func Execute() error {
     }
 
     return nil
+}
+
+func initManufacturerFlags(cmd *cobra.Command) {
+    cmd.PersistentFlags().StringVarP(&organizationName, "manufacturer-organization-name",
+        "m", "", "manufacturer-organization-name")
+    cmd.Flags().StringVarP(&organizationAddress, "manufacturer-organization-address",
+        "a", "", "manufacturer-organization-address")
+    cmd.Flags().StringVarP(&email, "manufacturer-email",
+        "e", "", "manufacturer-email")
+    cmd.Flags().StringVarP(&site, "manufacturer-site",
+        "s", "", "manufacturer-site")
 }

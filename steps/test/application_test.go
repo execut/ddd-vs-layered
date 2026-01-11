@@ -33,7 +33,9 @@ func TestApplication_Live(t *testing.T) {
     })
 
     t.Run("CreateLabelTemplate", func(t *testing.T) {
-        err := app.CreateLabelTemplate(t.Context(), expectedUUIDValue, expectedManufacturerOrganizationNameValue)
+        err := app.CreateLabelTemplate(t.Context(), expectedUUIDValue, application.Manufacturer{
+            OrganizationName: expectedManufacturerOrganizationNameValue,
+        })
 
         require.NoError(t, err)
     })
@@ -43,16 +45,24 @@ func TestApplication_Live(t *testing.T) {
 
         require.NoError(t, err)
         assert.JSONEq(t, `{"id":"123e4567-e89b-12d3-a456-426655440000",`+
-            `"manufacturerOrganizationName":"test manufacturer organization name"}`, result)
+            `"manufacturer":{"organizationName":"test manufacturer organization name"}}`, result)
     })
 
     t.Run("UpdateLabelTemplate", func(t *testing.T) {
-        err := app.UpdateLabelTemplate(t.Context(), expectedUUIDValue, expectedNewManufacturerOrganizationNameValue)
+        err := app.UpdateLabelTemplate(t.Context(), expectedUUIDValue, application.Manufacturer{
+            OrganizationName:    expectedNewManufacturerOrganizationNameValue,
+            OrganizationAddress: expectedManufacturerOrganizationAddressValue,
+            Email:               expectedManufacturerEmailValue,
+            Site:                expectedManufacturerSiteValue,
+        })
 
         require.NoError(t, err)
         result, err := app.GetLabelTemplate(t.Context(), expectedUUIDValue)
         require.NoError(t, err)
         assert.Contains(t, result, expectedNewManufacturerOrganizationNameValue)
+        assert.Contains(t, result, expectedManufacturerOrganizationAddressValue)
+        assert.Contains(t, result, expectedManufacturerEmailValue)
+        assert.Contains(t, result, expectedManufacturerSiteValue)
     })
 
     t.Run("Удалять шаблон этикетки товара по UUID", func(t *testing.T) {

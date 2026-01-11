@@ -14,7 +14,12 @@ func InitLabelsUpdateTemplate(ctx context.Context, app *application.Application)
         Short: "",
         Long:  ``,
         Run: func(_ *cobra.Command, _ []string) {
-            err := app.UpdateLabelTemplate(ctx, labelTemplateID, name)
+            err := app.UpdateLabelTemplate(ctx, labelTemplateID, application.Manufacturer{
+                OrganizationName:    organizationName,
+                OrganizationAddress: organizationAddress,
+                Email:               email,
+                Site:                site,
+            })
             if err != nil {
                 panic(err)
             }
@@ -23,8 +28,7 @@ func InitLabelsUpdateTemplate(ctx context.Context, app *application.Application)
         },
     }
 
-    updateLabelTemplateCmd.PersistentFlags().StringVarP(&name, "manufacturer-organization-name",
-        "m", "", "manufacturer-organization-name")
+    initManufacturerFlags(updateLabelTemplateCmd)
     rootCmd.AddCommand(updateLabelTemplateCmd)
 
     return nil

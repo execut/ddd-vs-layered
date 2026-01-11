@@ -23,7 +23,7 @@ func InitLabelsGetTemplate(ctx context.Context, app *application.Application) er
         },
     }
 
-    getLabelTemplateCmd.PersistentFlags().StringVarP(&name, "labels-get-template",
+    getLabelTemplateCmd.PersistentFlags().StringVarP(&organizationName, "labels-get-template",
         "g", "", "labels-get-template")
 
     rootCmd.AddCommand(getLabelTemplateCmd)
