@@ -5,9 +5,9 @@ const (
     expectedManufacturerOrganizationName       = "test manufacturer organization name"
     expectedManufacturerOrganizationAddress    = "test manufacturer organization address"
     expectedManufacturerEmail                  = "test@test.com"
-    expectedManufacturerSite                   = "test.com"
+    expectedManufacturerSite                   = "https://test.com"
     expectedNewManufacturerOrganizationName    = "new test manufacturer organization name"
     expectedNewManufacturerOrganizationAddress = "new test manufacturer organization address"
     expectedNewManufacturerEmail               = "new-test@test.com"
-    expectedNewManufacturerSite                = "new-test.com"
+    expectedNewManufacturerSite                = "https://new-test.com"
 )

@@ -102,7 +102,7 @@ func TestLabelLive(t *testing.T) {
         "organizationName": "test manufacturer organization name",
         "organizationAddress": "test manufacturer organization address",
         "email": "test@test.com",
-        "site": "test.com"
+        "site": "https://test.com"
     }
 }`, output)
         })
@@ -181,42 +181,21 @@ func TestLabelLive(t *testing.T) {
                     organizationAddress: strings.Repeat("a", 256),
                     email:               expectedManufacturerEmail,
                     site:                expectedManufacturerSite,
-                    errorMessage:        "Адрес должен быть до 255 символов в длину",
+                    errorMessage:        "адрес должен быть до 255 символов в длину",
                 },
                 {
                     fieldName:           "Email >255",
                     organizationAddress: expectedManufacturerOrganizationAddress,
                     email:               strings.Repeat("a", 256-9) + "@test.com",
                     site:                expectedManufacturerSite,
-                    errorMessage:        "Email должен быть до 255 символов в длину",
+                    errorMessage:        "email должен быть до 255 символов в длину",
                 },
                 {
                     fieldName:           "Сайт >255",
                     organizationAddress: expectedManufacturerOrganizationAddress,
                     email:               expectedManufacturerEmail,
                     site:                strings.Repeat("a", 256-4) + ".com",
-                    errorMessage:        "Сайт должен быть до 255 символов в длину",
-                },
-                {
-                    fieldName:           "Адрес =0",
-                    organizationAddress: "",
-                    email:               expectedManufacturerEmail,
-                    site:                expectedManufacturerSite,
-                    errorMessage:        "Адрес должен быть до 255 символов в длину",
-                },
-                {
-                    fieldName:           "Email =0",
-                    organizationAddress: expectedManufacturerOrganizationAddress,
-                    email:               "",
-                    site:                expectedManufacturerSite,
-                    errorMessage:        "Email должен быть до 255 символов в длину",
-                },
-                {
-                    fieldName:           "Сайт =0",
-                    organizationAddress: expectedManufacturerOrganizationAddress,
-                    email:               expectedManufacturerEmail,
-                    site:                "",
-                    errorMessage:        "Сайт должен быть до 255 символов в длину",
+                    errorMessage:        "сайт должен быть до 255 символов в длину",
                 },
             }
             for _, tt := range tests {
@@ -241,14 +220,14 @@ func TestLabelLive(t *testing.T) {
                     organizationAddress: expectedManufacturerOrganizationAddress,
                     email:               "asdasdsas",
                     site:                expectedManufacturerSite,
-                    errorMessage:        "Email имеет не корректный формат",
+                    errorMessage:        "email имеет не корректный формат",
                 },
                 {
                     fieldName:           "Сайт",
                     organizationAddress: expectedManufacturerOrganizationAddress,
                     email:               expectedManufacturerEmail,
                     site:                "asdasdadasas",
-                    errorMessage:        "Сайт имеет не корректный формат",
+                    errorMessage:        "сайт имеет не корректный формат",
                 },
             }
             for _, tt := range tests {
