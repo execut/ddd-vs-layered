@@ -252,7 +252,7 @@ func TestLabelLive(t *testing.T) {
             "--id", expectedUUID,
         })
 
-        require.Error(t, err)
+        require.NoError(t, err)
         assert.JSONEq(t, `
 [{
     "order_key": "1",
