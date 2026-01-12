@@ -2,6 +2,7 @@ package application
 
 import (
     "context"
+    "encoding/json"
 
     domain2 "effective-architecture/steps/domain"
     infrastructure2 "effective-architecture/steps/infrastructure"
@@ -49,4 +50,38 @@ func (a *Application) CreateLabelTemplate(ctx context.Context, uuid string, manu
     }
 
     return nil
+}
+
+func (a *Application) GetLabelTemplate(ctx context.Context, uuid string) (string, error) {
+    domainUUID, err := domain2.NewLabelTemplateID(uuid)
+    if err != nil {
+        return "", err
+    }
+
+    domainLabel, err := domain2.NewLabelTemplate(domainUUID)
+    if err != nil {
+        return "", err
+    }
+
+    err = a.repository.Load(ctx, domainLabel)
+    if err != nil {
+        return "", err
+    }
+
+    responseObj := GetLabelTemplateResponse{
+        ID:                           domainLabel.ID.UUID.String(),
+        ManufacturerOrganizationName: domainLabel.ManufacturerOrganizationName.Name,
+    }
+
+    responseMarshaled, err := json.Marshal(responseObj)
+    if err != nil {
+        return "", err
+    }
+
+    return string(responseMarshaled), nil
+}
+
+type GetLabelTemplateResponse struct {
+    ID                           string `json:"id"`
+    ManufacturerOrganizationName string `json:"manufacturerOrganizationName"`
 }
