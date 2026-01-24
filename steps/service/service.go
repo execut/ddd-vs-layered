@@ -27,14 +27,13 @@ type IRepository interface {
     Insert(ctx context.Context, model LabelTemplate) error
     Find(ctx context.Context, id string) (LabelTemplate, error)
     Update(ctx context.Context, model LabelTemplate) error
-    Truncate(ctx context.Context) error
     Delete(ctx context.Context, id string) error
 }
 
 type IHistoryRepository interface {
     Create(ctx context.Context, model LabelTemplateHistory, orderKey int) error
     FindAll(ctx context.Context, labelTemplateID string) ([]LabelTemplateHistoryResult, error)
-    Truncate(ctx context.Context) error
+    Delete(ctx context.Context, labelTemplateID string) error
 }
 
 type Service struct {
@@ -43,8 +42,8 @@ type Service struct {
 }
 
 func (s Service) Cleanup(ctx context.Context, labelTemplateID string) error {
-    _ = s.repository.Truncate(ctx)
-    _ = s.historyRepository.Truncate(ctx)
+    _ = s.repository.Delete(ctx, labelTemplateID)
+    _ = s.historyRepository.Delete(ctx, labelTemplateID)
 
     return nil
 }
