@@ -17,6 +17,7 @@ func NewApplication(ctx context.Context) (*service.Service, error) {
     if err != nil {
         return nil, err
     }
+
     historyRepository, err := service.NewHistoryRepository(ctx)
     if err != nil {
         return nil, err

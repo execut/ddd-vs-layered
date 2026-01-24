@@ -2,6 +2,7 @@ package commands
 
 import (
     "context"
+    "encoding/json"
     "fmt"
 
     "effective-architecture/steps/contract"
@@ -13,13 +14,20 @@ func InitLabelsGetTemplate(ctx context.Context, app contract.IApplication) error
         Use:   "labels-get-template",
         Short: "",
         Long:  ``,
-        Run: func(_ *cobra.Command, _ []string) {
+        RunE: func(_ *cobra.Command, _ []string) error {
             result, err := app.Get(ctx, labelTemplateID)
             if err != nil {
-                panic(err)
+                return err
             }
 
-            fmt.Println(result)
+            resultJSON, err := json.Marshal(result)
+            if err != nil {
+                return err
+            }
+
+            fmt.Println(string(resultJSON))
+
+            return nil
         },
     }
 
