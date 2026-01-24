@@ -6,10 +6,14 @@ import (
     "effective-architecture/steps/contract"
 )
 
+var _ contract.IApplication = (*Application)(nil)
+
 type Application struct {
 }
 
-func NewApplication() (*Application, error) {
+func NewApplication(ctx context.Context) (*Application, error) {
+    _ = ctx
+
     return &Application{}, nil
 }
 
@@ -57,6 +61,13 @@ func (a *Application) AddCategoryList(ctx context.Context, labelTemplateID strin
     _ = ctx
     _ = labelTemplateID
     _ = categoryList
+
+    return nil
+}
+
+func (a *Application) Cleanup(ctx context.Context, labelTemplateID string) error {
+    _ = ctx
+    _ = labelTemplateID
 
     return nil
 }
