@@ -11,7 +11,7 @@ import (
 )
 
 var (
-    _                                                 contract.IApplication = Service{}
+    _                                                 contract.IApplication = (*Service)(nil)
     ErrLabelTemplateAlreadyCreated                                          = errors.New("попытка создать уже существующий шаблон")
     ErrLabelTemplateAlreadyDeleted                                          = errors.New("попытка удалить уже удалённый шаблон")
     ErrLabelTemplateWrongManufacturerOrganizationName                       = errors.New("название организации производителя должно " +
@@ -40,6 +40,13 @@ type IHistoryRepository interface {
 type Service struct {
     repository        IRepository
     historyRepository IHistoryRepository
+}
+
+func (s Service) Cleanup(ctx context.Context, labelTemplateID string) error {
+    _ = s.repository.Truncate(ctx)
+    _ = s.historyRepository.Truncate(ctx)
+
+    return nil
 }
 
 func NewService(repository IRepository, historyRepository IHistoryRepository) *Service {
