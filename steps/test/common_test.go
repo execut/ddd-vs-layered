@@ -36,4 +36,8 @@ var (
         nil,
         nil,
     )
+    expectedCategory1TypeIDValue int64 = 2
+    expectedCategory2TypeIDValue int64 = 4
+    expectedCategory1, _               = domain.NewCategory(1, &expectedCategory1TypeIDValue)
+    expectedCategory2, _               = domain.NewCategory(3, &expectedCategory2TypeIDValue)
 )

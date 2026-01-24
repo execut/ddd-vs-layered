@@ -108,4 +108,17 @@ func TestApplication_Live(t *testing.T) {
     }]
     `, out)
     })
+
+    t.Run("11. Привязывать шаблон к списку категорий или категорий+типов", func(t *testing.T) {
+        err := app.LabelTemplateAddCategoryList(t.Context(), expectedUUIDValue, []string{"1", "2-3"})
+
+        require.NoError(t, err)
+
+        t.Run("и получать ошибку при попытке привязать уже существующую категорию", func(t *testing.T) {
+            err := app.LabelTemplateAddCategoryList(t.Context(), expectedUUIDValue, []string{"2-3"})
+
+            require.Error(t, err)
+            assert.ErrorContains(t, err, "категория уже привязана к шаблону (категория 2, тип 3)")
+        })
+    })
 }

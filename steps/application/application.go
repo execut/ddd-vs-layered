@@ -3,11 +3,16 @@ package application
 import (
     "context"
     "encoding/json"
+    "errors"
+    "strconv"
+    "strings"
 
     "effective-architecture/steps/domain"
     "effective-architecture/steps/domain/history"
     "effective-architecture/steps/infrastructure"
 )
+
+var ErrCategoryEmpty = errors.New("wrong category")
 
 type Application struct {
     repository        domain.IRepository
@@ -174,6 +179,59 @@ func (a *Application) LabelTemplateHistoryList(ctx context.Context, id string) (
     }
 
     return string(resultString), nil
+}
+
+func (a *Application) LabelTemplateAddCategoryList(ctx context.Context, labelTemplateID string,
+    categoryList []string) error {
+    domainCategoryList := make([]domain.Category, 0, len(categoryList))
+    for _, category := range categoryList {
+        categoryParts := strings.Split(category, "-")
+
+        var categoryTypeID *int64
+
+        if len(categoryParts) == 0 {
+            return ErrCategoryEmpty
+        }
+
+        categoryID, err := strconv.ParseInt(categoryParts[0], 10, 64)
+        if err != nil {
+            return err
+        }
+
+        const partsLimit = 2
+        if len(categoryParts) == partsLimit {
+            categoryTypeIDValue, err := strconv.ParseInt(categoryParts[1], 10, 64)
+            if err != nil {
+                return err
+            }
+
+            categoryTypeID = &categoryTypeIDValue
+        }
+
+        domainCategory, err := domain.NewCategory(categoryID, categoryTypeID)
+        if err != nil {
+            return err
+        }
+
+        domainCategoryList = append(domainCategoryList, domainCategory)
+    }
+
+    domainLabel, err := a.loadLabelTemplate(ctx, labelTemplateID)
+    if err != nil {
+        return err
+    }
+
+    err = domainLabel.AddCategoryList(domainCategoryList)
+    if err != nil {
+        return err
+    }
+
+    err = a.repository.Save(ctx, domainLabel)
+    if err != nil {
+        return err
+    }
+
+    return nil
 }
 
 func (a *Application) loadLabelTemplate(ctx context.Context, id string) (*domain.LabelTemplate, error) {

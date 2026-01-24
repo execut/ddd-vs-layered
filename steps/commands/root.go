@@ -20,6 +20,14 @@ var (
     organizationAddress string
     site                string
     email               string
+    initiators          = []func(ctx context.Context, app *application.Application) error{
+        InitLabelsCreateTemplate,
+        InitLabelsDeleteTemplate,
+        InitLabelsGetTemplate,
+        InitLabelsTemplateAddCategoryList,
+        InitLabelsTemplateHistory,
+        InitLabelsUpdateTemplate,
+    }
 )
 
 func Execute() error {
@@ -40,29 +48,11 @@ func Execute() error {
         panic(err)
     }
 
-    err = InitLabelsCreateTemplate(ctx, app)
-    if err != nil {
-        return err
-    }
-
-    err = InitLabelsUpdateTemplate(ctx, app)
-    if err != nil {
-        return err
-    }
-
-    err = InitLabelsDeleteTemplate(ctx, app)
-    if err != nil {
-        return err
-    }
-
-    err = InitLabelsGetTemplate(ctx, app)
-    if err != nil {
-        return err
-    }
-
-    err = InitLabelsTemplateHistory(ctx, app)
-    if err != nil {
-        return err
+    for _, initiator := range initiators {
+        err := initiator(ctx, app)
+        if err != nil {
+            return err
+        }
     }
 
     rootCmd.PersistentFlags().StringVarP(&labelTemplateID, "id", "i", "", "id")

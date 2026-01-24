@@ -1,10 +1,14 @@
 package domain
 
-import "errors"
+import (
+    "errors"
+    "fmt"
+)
 
 var (
     ErrLabelTemplateAlreadyCreated = errors.New("попытка создать уже существующий шаблон")
     ErrLabelTemplateAlreadyDeleted = errors.New("попытка удалить уже удалённый шаблон")
+    ErrCategoryAlreadyAdded        = errors.New("категория уже привязана к шаблону")
 )
 
 type LabelTemplate struct {
@@ -12,6 +16,7 @@ type LabelTemplate struct {
     Manufacturer Manufacturer
     ID           LabelTemplateID
     Events       []LabelTemplateEvent
+    CategoryList []Category
 }
 
 func NewLabelTemplate(id LabelTemplateID) (*LabelTemplate, error) {
@@ -43,6 +48,28 @@ func (t *LabelTemplate) Update(manufacturer Manufacturer) error {
     return nil
 }
 
+func (t *LabelTemplate) AddCategoryList(categoryList []Category) error {
+    for _, currentCategory := range t.CategoryList {
+        for _, newCategory := range categoryList {
+            if currentCategory.Same(newCategory) {
+                if newCategory.TypeID != nil {
+                    return fmt.Errorf("%w (категория %d, тип %d)", ErrCategoryAlreadyAdded,
+                        newCategory.CategoryID, *newCategory.TypeID)
+                }
+
+                return fmt.Errorf("%w (категория %d)", ErrCategoryAlreadyAdded, newCategory.CategoryID)
+            }
+        }
+    }
+
+    err := t.addAndApplyEvent(LabelTemplateCategoryListAddedEvent{CategoryList: categoryList})
+    if err != nil {
+        return err
+    }
+
+    return nil
+}
+
 func (t *LabelTemplate) Delete() error {
     if t.Status != LabelTemplateStatusCreated {
         return ErrLabelTemplateAlreadyDeleted
@@ -65,6 +92,8 @@ func (t *LabelTemplate) ApplyEvent(event LabelTemplateEvent) error {
         t.Manufacturer = payload.Manufacturer
     case LabelTemplateDeletedEvent:
         t.Status = LabelTemplateStatusDeleted
+    case LabelTemplateCategoryListAddedEvent:
+        t.CategoryList = append(t.CategoryList, payload.CategoryList...)
     }
 
     return nil
