@@ -3,7 +3,7 @@ package commands
 import (
     "context"
 
-    "effective-architecture/steps/labels"
+    "effective-architecture/steps/application"
     "github.com/spf13/cobra"
 )
 
@@ -13,27 +13,37 @@ var (
         Short: "",
         Long:  ``,
     }
-    labelTemplateID                 string
-    manufacturerOrganizationName    string
-    manufacturerOrganizationAddress string
-    manufacturerEmail               string
-    manufacturerSite                string
+    labelTemplateID     string
+    organizationName    string
+    organizationAddress string
+    site                string
+    email               string
+    initiators          = []func(ctx context.Context, app *application.Application) error{
+        InitLabelsCreateTemplate,
+        InitLabelsDeleteTemplate,
+        InitLabelsGetTemplate,
+        InitLabelsTemplateAddCategoryList,
+        InitLabelsTemplateHistory,
+        InitLabelsUpdateTemplate,
+    }
 )
 
 func Execute() error {
     ctx := context.Background()
 
-    service, err := NewService(ctx)
+    app, err := application.NewApplication()
     if err != nil {
-        return err
+        panic(err)
     }
 
-    InitRootCmd()
-    InitCreateLabelTemplate(ctx, service)
-    InitUpdateLabelTemplate(ctx, service)
-    InitDeleteLabelTemplate(ctx, service)
-    InitGetLabelTemplate(ctx, service)
-    InitTemplateHistory(ctx, service)
+    for _, initiator := range initiators {
+        err := initiator(ctx, app)
+        if err != nil {
+            return err
+        }
+    }
+
+    rootCmd.PersistentFlags().StringVarP(&labelTemplateID, "id", "i", "", "id")
 
     err = rootCmd.Execute()
     if err != nil {
@@ -43,33 +53,13 @@ func Execute() error {
     return nil
 }
 
-func InitRootCmd() {
-    rootCmd.PersistentFlags().StringVarP(&labelTemplateID, "id", "i", "", "id")
-}
-
-func NewService(ctx context.Context) (*labels.Service, error) {
-    repository, err := labels.NewRepository(ctx)
-    if err != nil {
-        return nil, err
-    }
-
-    historyRepository, err := labels.NewHistoryRepository(ctx)
-    if err != nil {
-        return nil, err
-    }
-
-    service := labels.NewService(repository, historyRepository)
-
-    return service, nil
-}
-
 func initManufacturerFlags(cmd *cobra.Command) {
-    cmd.PersistentFlags().StringVarP(&manufacturerOrganizationName, "manufacturer-organization-name", "m",
-        "", "manufacturer-organization-name")
-    cmd.Flags().StringVarP(&manufacturerOrganizationAddress, "manufacturer-organization-address", "a",
-        "", "manufacturer-organization-address")
-    cmd.Flags().StringVarP(&manufacturerEmail, "manufacturer-email", "e",
-        "", "manufacturer-email")
-    cmd.Flags().StringVarP(&manufacturerSite, "manufacturer-site", "s",
-        "", "manufacturer-site")
+    cmd.PersistentFlags().StringVarP(&organizationName, "manufacturer-organization-name",
+        "m", "", "manufacturer-organization-name")
+    cmd.Flags().StringVarP(&organizationAddress, "manufacturer-organization-address",
+        "a", "", "manufacturer-organization-address")
+    cmd.Flags().StringVarP(&email, "manufacturer-email",
+        "e", "", "manufacturer-email")
+    cmd.Flags().StringVarP(&site, "manufacturer-site",
+        "s", "", "manufacturer-site")
 }

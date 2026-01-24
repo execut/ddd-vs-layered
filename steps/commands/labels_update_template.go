@@ -4,31 +4,32 @@ import (
     "context"
     "fmt"
 
-    "effective-architecture/steps/labels"
+    "effective-architecture/steps/application"
     "github.com/spf13/cobra"
 )
 
-func InitUpdateLabelTemplate(ctx context.Context, service *labels.Service) {
-    var updateLabelTemplate = &cobra.Command{
+func InitLabelsUpdateTemplate(ctx context.Context, app *application.Application) error {
+    var updateLabelTemplateCmd = &cobra.Command{
         Use:   "labels-update-template",
         Short: "",
-        RunE: func(_ *cobra.Command, _ []string) error {
-            err := service.UpdateLabelTemplate(ctx, labelTemplateID, labels.Manufacturer{
-                OrganizationName:    manufacturerOrganizationName,
-                OrganizationAddress: manufacturerOrganizationAddress,
-                Email:               manufacturerEmail,
-                Site:                manufacturerSite,
+        Long:  ``,
+        Run: func(_ *cobra.Command, _ []string) {
+            err := app.Update(ctx, labelTemplateID, application.Manufacturer{
+                OrganizationName:    organizationName,
+                OrganizationAddress: organizationAddress,
+                Email:               email,
+                Site:                site,
             })
             if err != nil {
-                return err
+                panic(err)
             }
 
             fmt.Println("1")
-
-            return nil
         },
     }
 
-    initManufacturerFlags(updateLabelTemplate)
-    rootCmd.AddCommand(updateLabelTemplate)
+    initManufacturerFlags(updateLabelTemplateCmd)
+    rootCmd.AddCommand(updateLabelTemplateCmd)
+
+    return nil
 }

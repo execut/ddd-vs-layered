@@ -1,16 +1,14 @@
 package main
 
 import (
-    "fmt"
-    "os"
-
     "effective-architecture/steps/commands"
+    "golang.org/x/text/cases"
+    "golang.org/x/text/language"
 )
 
 func main() {
     err := commands.Execute()
     if err != nil {
-        fmt.Fprintln(os.Stderr, err)
-        os.Exit(1)
+        panic(cases.Title(language.Russian, cases.Compact).String(err.Error()))
     }
 }

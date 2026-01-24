@@ -4,16 +4,17 @@ import (
     "context"
     "fmt"
 
-    "effective-architecture/steps/labels"
+    "effective-architecture/steps/application"
     "github.com/spf13/cobra"
 )
 
-func InitTemplateHistory(ctx context.Context, service *labels.Service) {
-    var templateHistory = &cobra.Command{
+func InitLabelsTemplateHistory(ctx context.Context, app *application.Application) error {
+    var labelTemplateHistoryCmd = &cobra.Command{
         Use:   "labels-template-history",
         Short: "",
+        Long:  ``,
         RunE: func(_ *cobra.Command, _ []string) error {
-            result, err := service.GetLabelHistory(ctx, labelTemplateID)
+            result, err := app.HistoryList(ctx, labelTemplateID)
             if err != nil {
                 return err
             }
@@ -24,5 +25,8 @@ func InitTemplateHistory(ctx context.Context, service *labels.Service) {
         },
     }
 
-    rootCmd.AddCommand(templateHistory)
+    initManufacturerFlags(labelTemplateHistoryCmd)
+    rootCmd.AddCommand(labelTemplateHistoryCmd)
+
+    return nil
 }
