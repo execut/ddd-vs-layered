@@ -147,7 +147,6 @@ func TestLabelTemplate_Live(t *testing.T) {
     })
 
     t.Run("9. При создании шаблона возвращать ошибку с понятным описанием", func(t *testing.T) {
-
         type args struct {
             fieldName           string
             organizationAddress string
