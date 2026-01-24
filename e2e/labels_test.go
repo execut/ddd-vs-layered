@@ -309,7 +309,7 @@ func TestLabelLive(t *testing.T) {
             })
 
             require.Error(t, err)
-            assert.Contains(t, out, "категория 2 с типом 3 уже привязана к шаблону")
+            assert.Contains(t, out, "категория уже привязана к шаблону (категория 2, тип 3)")
         })
     })
 }
