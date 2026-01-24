@@ -4,11 +4,11 @@ import (
     "context"
     "fmt"
 
-    "effective-architecture/steps/application"
+    "effective-architecture/steps/contract"
     "github.com/spf13/cobra"
 )
 
-func InitLabelsGetTemplate(ctx context.Context, app *application.Application) error {
+func InitLabelsGetTemplate(ctx context.Context, app contract.IApplication) error {
     var getLabelTemplateCmd = &cobra.Command{
         Use:   "labels-get-template",
         Short: "",
