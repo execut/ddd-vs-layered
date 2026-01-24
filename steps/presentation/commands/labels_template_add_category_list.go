@@ -5,11 +5,11 @@ import (
     "fmt"
     "strings"
 
-    "effective-architecture/steps/application"
+    "effective-architecture/steps/contract"
     "github.com/spf13/cobra"
 )
 
-func InitLabelsTemplateAddCategoryList(ctx context.Context, app *application.Application) error {
+func InitLabelsTemplateAddCategoryList(ctx context.Context, app contract.IApplication) error {
     var categoryList []string
 
     var labelsTemplateAddCategoryListCmd = &cobra.Command{
@@ -17,14 +17,15 @@ func InitLabelsTemplateAddCategoryList(ctx context.Context, app *application.App
         Short: "",
         Long:  ``,
         Run: func(_ *cobra.Command, _ []string) {
-            appCategoryList := make([]application.Category, 0, len(categoryList))
+            appCategoryList := make([]contract.Category, 0, len(categoryList))
             for _, categoryID := range categoryList {
                 categoryIDParts := strings.Split(categoryID, "-")
-                appCategoryList = append(appCategoryList, application.Category{
+                appCategoryList = append(appCategoryList, contract.Category{
                     CategoryID: categoryIDParts[0],
                     TypeID:     &categoryIDParts[1],
                 })
             }
+
             err := app.AddCategoryList(ctx, labelTemplateID, appCategoryList)
             if err != nil {
                 panic(err)

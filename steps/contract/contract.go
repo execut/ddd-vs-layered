@@ -1,4 +1,15 @@
-package application
+package contract
+
+import "context"
+
+type IApplication interface {
+    Create(ctx context.Context, labelTemplateID string, manufacturer Manufacturer) error
+    Get(ctx context.Context, labelTemplateID string) (LabelTemplate, error)
+    Delete(ctx context.Context, labelTemplateID string) error
+    Update(ctx context.Context, labelTemplateID string, manufacturer Manufacturer) error
+    HistoryList(ctx context.Context, labelTemplateID string) ([]LabelTemplateHistoryRow, error)
+    AddCategoryList(ctx context.Context, labelTemplateID string, categoryList []Category) error
+}
 
 type LabelTemplateHistoryList struct {
     List []LabelTemplateHistoryRow `json:"list"`
