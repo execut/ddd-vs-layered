@@ -4,13 +4,24 @@ import (
     "context"
 
     "effective-architecture/steps/contract"
+    "effective-architecture/steps/service"
 )
 
 type Application struct {
 }
 
-func NewApplication() (*Application, error) {
-    return &Application{}, nil
+func NewApplication() (*service.Service, error) {
+    ctx := context.Background()
+    repository, err := service.NewRepository(ctx)
+    if err != nil {
+        return nil, err
+    }
+    historyRepository, err := service.NewHistoryRepository(ctx)
+    if err != nil {
+        return nil, err
+    }
+
+    return service.NewService(repository, historyRepository), nil
 }
 
 func (a *Application) Create(ctx context.Context, labelTemplateID string, manufacturer contract.Manufacturer) error {

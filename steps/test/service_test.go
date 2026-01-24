@@ -46,8 +46,8 @@ func TestLabels_Live(t *testing.T) {
         require.ErrorIs(t, err, service.ErrLabelTemplateAlreadyCreated)
     })
 
-    t.Run("GetLabelTemplate", func(t *testing.T) {
-        result, err := service.GetLabelTemplate(t.Context(), expectedUUID)
+    t.Run("Get", func(t *testing.T) {
+        result, err := service.Get(t.Context(), expectedUUID)
 
         require.NoError(t, err)
         assert.JSONEq(t, `{"id":"123e4567-e89b-12d3-a456-426655440000","manufacturer":{"organizationName":`+
@@ -55,16 +55,16 @@ func TestLabels_Live(t *testing.T) {
     })
 
     t.Run("Обновлять данные шаблона", func(t *testing.T) {
-        err = service.UpdateLabelTemplate(t.Context(), expectedUUID, expectedNewManufacturer)
+        err = service.Update(t.Context(), expectedUUID, expectedNewManufacturer)
 
         require.NoError(t, err)
-        result, err := service.GetLabelTemplate(t.Context(), expectedUUID)
+        result, err := service.Get(t.Context(), expectedUUID)
 
         require.NoError(t, err)
         assert.Contains(t, result, expectedNewManufacturerOrganizationName)
 
         t.Run("и не давать это делать при ошибках из предыдущих пунктов", func(t *testing.T) {
-            err = service.UpdateLabelTemplate(t.Context(), expectedUUID, service.Manufacturer{
+            err = service.Update(t.Context(), expectedUUID, service.Manufacturer{
                 OrganizationName: strings.Repeat("a", 256),
             })
 
@@ -72,14 +72,14 @@ func TestLabels_Live(t *testing.T) {
         })
     })
 
-    t.Run("DeleteLabelTemplate", func(t *testing.T) {
-        err := service.DeleteLabelTemplate(t.Context(), expectedUUID)
+    t.Run("Delete", func(t *testing.T) {
+        err := service.Delete(t.Context(), expectedUUID)
 
         require.NoError(t, err)
     })
 
     t.Run("Чтобы возвращалась уникальная ошибка при попытке удалить уже удалённый шаблон", func(t *testing.T) {
-        err := service.DeleteLabelTemplate(t.Context(), expectedUUID)
+        err := service.Delete(t.Context(), expectedUUID)
 
         require.ErrorIs(t, err, service.ErrLabelTemplateAlreadyDeleted)
     })
@@ -107,17 +107,17 @@ func TestLabels_Live(t *testing.T) {
             err := service.CreateLabelTemplate(t.Context(), expectedUUID, expectedManufacturerWithAllFields)
 
             require.NoError(t, err)
-            result, err := service.GetLabelTemplate(t.Context(), expectedUUID)
+            result, err := service.Get(t.Context(), expectedUUID)
             require.NoError(t, err)
             assert.Contains(t, result, expectedManufacturerOrganizationAddress)
             assert.Contains(t, result, expectedManufacturerEmail)
             assert.Contains(t, result, expectedManufacturerSite)
         })
         t.Run("и обновлении", func(t *testing.T) {
-            err := service.UpdateLabelTemplate(t.Context(), expectedUUID, expectedNewManufacturerWithAllFields)
+            err := service.Update(t.Context(), expectedUUID, expectedNewManufacturerWithAllFields)
 
             require.NoError(t, err)
-            result, err := service.GetLabelTemplate(t.Context(), expectedUUID)
+            result, err := service.Get(t.Context(), expectedUUID)
             require.NoError(t, err)
             assert.Contains(t, result, expectedNewManufacturerOrganizationAddress)
             assert.Contains(t, result, expectedNewManufacturerEmail)
@@ -175,7 +175,7 @@ func TestLabels_Live(t *testing.T) {
                 manufacturer := testForUpdateLabel.manufacturer
                 manufacturer.OrganizationName = expectedManufacturerOrganizationName
 
-                err = service.UpdateLabelTemplate(t.Context(), expectedUUID, manufacturer)
+                err = service.Update(t.Context(), expectedUUID, manufacturer)
 
                 require.ErrorIs(t, err, testForUpdateLabel.err)
             }
@@ -216,7 +216,7 @@ func TestLabels_Live(t *testing.T) {
                 manufacturer := testForUpdateLabel.manufacturer
                 manufacturer.OrganizationName = expectedManufacturerOrganizationName
 
-                err = service.UpdateLabelTemplate(t.Context(), expectedUUID, manufacturer)
+                err = service.Update(t.Context(), expectedUUID, manufacturer)
 
                 require.ErrorIs(t, err, testForUpdateLabel.err)
             }
@@ -225,7 +225,7 @@ func TestLabels_Live(t *testing.T) {
 
     t.Run("Чтобы писалась история операций над шаблонами с возможностью выводить все"+
         " данные в json", func(t *testing.T) {
-        result, err := service.GetLabelHistory(t.Context(), expectedUUID)
+        result, err := service.HistoryList(t.Context(), expectedUUID)
 
         require.NoError(t, err)
         assert.JSONEq(t, `
