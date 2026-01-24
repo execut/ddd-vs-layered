@@ -2,6 +2,7 @@ package commands
 
 import (
     "context"
+    "encoding/json"
     "fmt"
 
     "effective-architecture/steps/application"
@@ -19,7 +20,12 @@ func InitLabelsTemplateHistory(ctx context.Context, app *application.Application
                 return err
             }
 
-            fmt.Println(result)
+            resultJson, err := json.Marshal(result)
+            if err != nil {
+                return err
+            }
+
+            fmt.Println(resultJson)
 
             return nil
         },

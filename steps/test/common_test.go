@@ -15,19 +15,19 @@ const (
 )
 
 var (
-    expectedManufacturer = labels.Manufacturer{
+    expectedManufacturer = service.Manufacturer{
         OrganizationName: expectedManufacturerOrganizationName,
     }
-    expectedManufacturerWithAllFields = labels.Manufacturer{
+    expectedManufacturerWithAllFields = service.Manufacturer{
         OrganizationName:    expectedManufacturerOrganizationName,
         OrganizationAddress: expectedManufacturerOrganizationAddress,
         Email:               expectedManufacturerEmail,
         Site:                expectedManufacturerSite,
     }
-    expectedNewManufacturer = labels.Manufacturer{
+    expectedNewManufacturer = service.Manufacturer{
         OrganizationName: expectedNewManufacturerOrganizationName,
     }
-    expectedNewManufacturerWithAllFields = labels.Manufacturer{
+    expectedNewManufacturerWithAllFields = service.Manufacturer{
         OrganizationName:    expectedNewManufacturerOrganizationName,
         OrganizationAddress: expectedNewManufacturerOrganizationAddress,
         Email:               expectedNewManufacturerEmail,

@@ -6,6 +6,7 @@ import (
     "testing"
 
     "effective-architecture/steps/labels"
+    "effective-architecture/steps/service"
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/require"
 )
@@ -13,11 +14,11 @@ import (
 func TestLabels_Live(t *testing.T) {
     t.Parallel()
 
-    var service *labels.Service
+    var service *service.Service
 
-    repository, err := labels.NewRepository(t.Context())
+    repository, err := service.NewRepository(t.Context())
     require.NoError(t, err)
-    historyRepository, err := labels.NewHistoryRepository(t.Context())
+    historyRepository, err := service.NewHistoryRepository(t.Context())
     require.NoError(t, err)
 
     _ = repository.Truncate(context.Background())
@@ -29,7 +30,7 @@ func TestLabels_Live(t *testing.T) {
     })
 
     t.Run("New", func(t *testing.T) {
-        service = labels.NewService(repository, historyRepository)
+        service = service.NewService(repository, historyRepository)
         require.NotNil(t, service)
     })
 
@@ -42,7 +43,7 @@ func TestLabels_Live(t *testing.T) {
     t.Run("Чтобы возвращалась уникальная ошибка при попытке создать уже существующий шаблон", func(t *testing.T) {
         err := service.CreateLabelTemplate(t.Context(), expectedUUID, expectedManufacturer)
 
-        require.ErrorIs(t, err, labels.ErrLabelTemplateAlreadyCreated)
+        require.ErrorIs(t, err, service.ErrLabelTemplateAlreadyCreated)
     })
 
     t.Run("GetLabelTemplate", func(t *testing.T) {
@@ -63,11 +64,11 @@ func TestLabels_Live(t *testing.T) {
         assert.Contains(t, result, expectedNewManufacturerOrganizationName)
 
         t.Run("и не давать это делать при ошибках из предыдущих пунктов", func(t *testing.T) {
-            err = service.UpdateLabelTemplate(t.Context(), expectedUUID, labels.Manufacturer{
+            err = service.UpdateLabelTemplate(t.Context(), expectedUUID, service.Manufacturer{
                 OrganizationName: strings.Repeat("a", 256),
             })
 
-            require.ErrorIs(t, labels.ErrLabelTemplateWrongManufacturerOrganizationName, err)
+            require.ErrorIs(t, service.ErrLabelTemplateWrongManufacturerOrganizationName, err)
         })
     })
 
@@ -80,24 +81,24 @@ func TestLabels_Live(t *testing.T) {
     t.Run("Чтобы возвращалась уникальная ошибка при попытке удалить уже удалённый шаблон", func(t *testing.T) {
         err := service.DeleteLabelTemplate(t.Context(), expectedUUID)
 
-        require.ErrorIs(t, err, labels.ErrLabelTemplateAlreadyDeleted)
+        require.ErrorIs(t, err, service.ErrLabelTemplateAlreadyDeleted)
     })
 
     t.Run("Чтобы возвращалась уникальная ошибка при попытке создать шаблон, "+
         "если длина Наименования организации производителя", func(t *testing.T) {
         t.Run("> 255", func(t *testing.T) {
-            err := service.CreateLabelTemplate(t.Context(), expectedUUID, labels.Manufacturer{
+            err := service.CreateLabelTemplate(t.Context(), expectedUUID, service.Manufacturer{
                 OrganizationName: strings.Repeat("a", 256),
             })
 
-            require.ErrorIs(t, err, labels.ErrLabelTemplateWrongManufacturerOrganizationName)
+            require.ErrorIs(t, err, service.ErrLabelTemplateWrongManufacturerOrganizationName)
         })
         t.Run("= 0", func(t *testing.T) {
-            err := service.CreateLabelTemplate(t.Context(), expectedUUID, labels.Manufacturer{
+            err := service.CreateLabelTemplate(t.Context(), expectedUUID, service.Manufacturer{
                 OrganizationName: "",
             })
 
-            require.ErrorIs(t, err, labels.ErrLabelTemplateWrongManufacturerOrganizationName)
+            require.ErrorIs(t, err, service.ErrLabelTemplateWrongManufacturerOrganizationName)
         })
     })
 
@@ -127,7 +128,7 @@ func TestLabels_Live(t *testing.T) {
     t.Run("При создании шаблона возвращать ошибку с понятным описанием", func(t *testing.T) {
         type args struct {
             fieldName    string
-            manufacturer labels.Manufacturer
+            manufacturer service.Manufacturer
             err          error
         }
 
@@ -135,30 +136,30 @@ func TestLabels_Live(t *testing.T) {
             tests := []args{
                 {
                     fieldName: "Адрес >255",
-                    manufacturer: labels.Manufacturer{
+                    manufacturer: service.Manufacturer{
                         OrganizationAddress: strings.Repeat("a", 256),
                         Email:               expectedManufacturerEmail,
                         Site:                expectedManufacturerSite,
                     },
-                    err: labels.ErrLabelTemplateManufacturerOrganizationAddressWrongLen,
+                    err: service.ErrLabelTemplateManufacturerOrganizationAddressWrongLen,
                 },
                 {
                     fieldName: "Email >255",
-                    manufacturer: labels.Manufacturer{
+                    manufacturer: service.Manufacturer{
                         OrganizationAddress: expectedManufacturerOrganizationAddress,
                         Email:               strings.Repeat("a", 256-9) + "@test.com",
                         Site:                expectedManufacturerSite,
                     },
-                    err: labels.ErrLabelTemplateManufacturerEmailWrongLen,
+                    err: service.ErrLabelTemplateManufacturerEmailWrongLen,
                 },
                 {
                     fieldName: "Сайт >255",
-                    manufacturer: labels.Manufacturer{
+                    manufacturer: service.Manufacturer{
                         OrganizationAddress: expectedManufacturerOrganizationAddress,
                         Email:               expectedManufacturerEmail,
                         Site:                strings.Repeat("a", 256-4) + ".com",
                     },
-                    err: labels.ErrLabelTemplateManufacturerSiteWrongLen,
+                    err: service.ErrLabelTemplateManufacturerSiteWrongLen,
                 },
             }
             for _, testForCreateLabel := range tests {
@@ -184,21 +185,21 @@ func TestLabels_Live(t *testing.T) {
             tests := []args{
                 {
                     fieldName: "Email",
-                    manufacturer: labels.Manufacturer{
+                    manufacturer: service.Manufacturer{
                         OrganizationAddress: expectedManufacturerOrganizationAddress,
                         Email:               "asdasdsas",
                         Site:                expectedManufacturerSite,
                     },
-                    err: labels.ErrLabelTemplateManufacturerEmailWrongFormat,
+                    err: service.ErrLabelTemplateManufacturerEmailWrongFormat,
                 },
                 {
                     fieldName: "Сайт",
-                    manufacturer: labels.Manufacturer{
+                    manufacturer: service.Manufacturer{
                         OrganizationAddress: expectedManufacturerOrganizationAddress,
                         Email:               expectedManufacturerEmail,
                         Site:                "asdasdadasas",
                     },
-                    err: labels.ErrLabelTemplateManufacturerSiteWrongFormat,
+                    err: service.ErrLabelTemplateManufacturerSiteWrongFormat,
                 },
             }
 

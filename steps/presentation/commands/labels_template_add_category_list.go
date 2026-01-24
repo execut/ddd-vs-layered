@@ -3,6 +3,7 @@ package commands
 import (
     "context"
     "fmt"
+    "strings"
 
     "effective-architecture/steps/application"
     "github.com/spf13/cobra"
@@ -16,7 +17,15 @@ func InitLabelsTemplateAddCategoryList(ctx context.Context, app *application.App
         Short: "",
         Long:  ``,
         Run: func(_ *cobra.Command, _ []string) {
-            err := app.AddCategoryList(ctx, labelTemplateID, categoryList)
+            appCategoryList := make([]application.Category, 0, len(categoryList))
+            for _, categoryID := range categoryList {
+                categoryIDParts := strings.Split(categoryID, "-")
+                appCategoryList = append(appCategoryList, application.Category{
+                    CategoryID: categoryIDParts[0],
+                    TypeID:     &categoryIDParts[1],
+                })
+            }
+            err := app.AddCategoryList(ctx, labelTemplateID, appCategoryList)
             if err != nil {
                 panic(err)
             }

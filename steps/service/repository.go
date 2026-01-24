@@ -1,4 +1,4 @@
-package labels
+package service
 
 import (
     "context"

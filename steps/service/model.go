@@ -1,4 +1,4 @@
-package labels
+package service
 
 type LabelTemplate struct {
     ID                              string
