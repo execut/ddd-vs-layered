@@ -20,6 +20,15 @@ type Repository struct {
 }
 
 func NewRepository(ctx context.Context) (*Repository, error) {
+    conn, err := NewDBConnection(ctx)
+    if err != nil {
+        return nil, err
+    }
+
+    return &Repository{conn: conn}, nil
+}
+
+func NewDBConnection(ctx context.Context) (*pgx.Conn, error) {
     connString := os.Getenv("DATABASE_URL")
 
     conn, err := pgx.Connect(ctx, connString)
@@ -32,7 +41,7 @@ func NewRepository(ctx context.Context) (*Repository, error) {
         return nil, err
     }
 
-    return &Repository{conn: conn}, nil
+    return conn, nil
 }
 
 func (r Repository) Insert(ctx context.Context, model LabelTemplate) error {

@@ -17,15 +17,19 @@ func TestLabels_Live(t *testing.T) {
 
     repository, err := labels.NewRepository(t.Context())
     require.NoError(t, err)
+    historyRepository, err := labels.NewHistoryRepository(t.Context())
+    require.NoError(t, err)
 
     _ = repository.Truncate(context.Background())
+    _ = historyRepository.Truncate(context.Background())
 
     t.Cleanup(func() {
         _ = repository.Truncate(context.Background())
+        _ = historyRepository.Truncate(context.Background())
     })
 
     t.Run("New", func(t *testing.T) {
-        service = labels.NewService(repository)
+        service = labels.NewService(repository, historyRepository)
         require.NotNil(t, service)
     })
 
@@ -216,5 +220,44 @@ func TestLabels_Live(t *testing.T) {
                 require.ErrorIs(t, err, testForUpdateLabel.err)
             }
         })
+    })
+
+    t.Run("Чтобы писалась история операций над шаблонами с возможностью выводить все"+
+        " данные в json", func(t *testing.T) {
+        result, err := service.GetLabelHistory(t.Context(), expectedUUID)
+
+        require.NoError(t, err)
+        assert.JSONEq(t, `
+[{
+    "orderKey": 1,
+    "action": "created",
+    "newManufacturerOrganizationName": "test manufacturer organization name"
+},
+{
+    "orderKey": 2,
+    "action": "updated",
+    "newManufacturerOrganizationName": "new test manufacturer organization name"
+},
+{
+    "orderKey": 3,
+    "action": "deleted"
+},
+{
+    "orderKey": 4,
+    "action": "created",
+    "newManufacturerOrganizationName": "test manufacturer organization name",
+    "newManufacturerOrganizationAddress": "test manufacturer organization address",
+    "newManufacturerEmail": "email@test.com",
+    "newManufacturerSite": "https://test.com"
+},
+{
+    "orderKey": 5,
+    "action": "updated",
+    "newManufacturerOrganizationName": "new test manufacturer organization name",
+    "newManufacturerOrganizationAddress": "new test manufacturer organization address",
+    "newManufacturerEmail": "new-email@test.com",
+    "newManufacturerSite": "https://new-test.com"
+}]
+`, result)
     })
 }

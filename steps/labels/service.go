@@ -29,13 +29,21 @@ type IRepository interface {
     Delete(ctx context.Context, id string) error
 }
 
-type Service struct {
-    repository IRepository
+type IHistoryRepository interface {
+    Create(ctx context.Context, model LabelTemplateHistory, orderKey int) error
+    FindAll(ctx context.Context, labelTemplateID string) ([]LabelTemplateHistoryResult, error)
+    Truncate(ctx context.Context) error
 }
 
-func NewService(repository IRepository) *Service {
+type Service struct {
+    repository        IRepository
+    historyRepository IHistoryRepository
+}
+
+func NewService(repository IRepository, historyRepository IHistoryRepository) *Service {
     return &Service{
-        repository: repository,
+        repository:        repository,
+        historyRepository: historyRepository,
     }
 }
 
@@ -63,6 +71,13 @@ func (s Service) CreateLabelTemplate(ctx context.Context, labelTemplateID string
         return err
     }
 
+    action := "created"
+
+    err = s.createHistory(ctx, labelTemplateID, manufacturer, action)
+    if err != nil {
+        return err
+    }
+
     return nil
 }
 
@@ -82,6 +97,13 @@ func (s Service) UpdateLabelTemplate(ctx context.Context, labelTemplateID string
     }
 
     err = s.repository.Update(ctx, model)
+    if err != nil {
+        return err
+    }
+
+    action := "updated"
+
+    err = s.createHistory(ctx, labelTemplateID, manufacturer, action)
     if err != nil {
         return err
     }
@@ -123,7 +145,29 @@ func (s Service) DeleteLabelTemplate(ctx context.Context, labelTemplateID string
         return err
     }
 
+    err = s.historyRepository.Create(ctx, LabelTemplateHistory{
+        LabelTemplateID: labelTemplateID,
+        Action:          "deleted",
+    }, 0)
+    if err != nil {
+        return err
+    }
+
     return nil
+}
+
+func (s Service) GetLabelHistory(ctx context.Context, labelTemplateID string) (string, error) {
+    historyList, err := s.historyRepository.FindAll(ctx, labelTemplateID)
+    if err != nil {
+        return "", err
+    }
+
+    result, err := json.Marshal(historyList)
+    if err != nil {
+        return "", err
+    }
+
+    return string(result), nil
 }
 
 func (s Service) validateManufacturer(manufacturer Manufacturer) error {
@@ -156,6 +200,23 @@ func (s Service) validateManufacturer(manufacturer Manufacturer) error {
         if err != nil {
             return ErrLabelTemplateManufacturerSiteWrongFormat
         }
+    }
+
+    return nil
+}
+
+func (s Service) createHistory(ctx context.Context, labelTemplateID string, manufacturer Manufacturer,
+    action string) error {
+    err := s.historyRepository.Create(ctx, LabelTemplateHistory{
+        LabelTemplateID:                    labelTemplateID,
+        Action:                             action,
+        NewManufacturerOrganizationName:    manufacturer.OrganizationName,
+        NewManufacturerOrganizationAddress: manufacturer.OrganizationAddress,
+        NewManufacturerEmail:               manufacturer.Email,
+        NewManufacturerSite:                manufacturer.Site,
+    }, 0)
+    if err != nil {
+        return err
     }
 
     return nil
