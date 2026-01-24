@@ -33,6 +33,7 @@ func Execute() error {
     InitUpdateLabelTemplate(ctx, service)
     InitDeleteLabelTemplate(ctx, service)
     InitGetLabelTemplate(ctx, service)
+    InitTemplateHistory(ctx, service)
 
     err = rootCmd.Execute()
     if err != nil {
@@ -52,7 +53,12 @@ func NewService(ctx context.Context) (*labels.Service, error) {
         return nil, err
     }
 
-    service := labels.NewService(repository)
+    historyRepository, err := labels.NewHistoryRepository(ctx)
+    if err != nil {
+        return nil, err
+    }
+
+    service := labels.NewService(repository, historyRepository)
 
     return service, nil
 }
