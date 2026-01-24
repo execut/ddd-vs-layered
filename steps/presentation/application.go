@@ -7,11 +7,12 @@ import (
     "effective-architecture/steps/service"
 )
 
+var _ contract.IApplication = (*Application)(nil)
+
 type Application struct {
 }
 
-func NewApplication() (*service.Service, error) {
-    ctx := context.Background()
+func NewApplication(ctx context.Context) (*service.Service, error) {
     repository, err := service.NewRepository(ctx)
     if err != nil {
         return nil, err
@@ -68,6 +69,13 @@ func (a *Application) AddCategoryList(ctx context.Context, labelTemplateID strin
     _ = ctx
     _ = labelTemplateID
     _ = categoryList
+
+    return nil
+}
+
+func (a *Application) Cleanup(ctx context.Context, labelTemplateID string) error {
+    _ = ctx
+    _ = labelTemplateID
 
     return nil
 }

@@ -32,7 +32,7 @@ var (
 func Execute() error {
     ctx := context.Background()
 
-    app, err := presentation.NewApplication()
+    app, err := presentation.NewApplication(ctx)
     if err != nil {
         panic(err)
     }

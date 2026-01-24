@@ -29,8 +29,12 @@ var (
 func TestLabelTemplate_Live(t *testing.T) {
     t.Parallel()
 
-    app, err := presentation.NewApplication()
+    app, err := presentation.NewApplication(t.Context())
     require.NoError(t, err)
+    _ = app.Cleanup(t.Context(), expectedID)
+    t.Cleanup(func() {
+        _ = app.Cleanup(t.Context(), expectedID)
+    })
 
     t.Run("1. Создавать шаблон этикетки товара с UUID и Наименованием организации производителя", func(t *testing.T) {
         err := app.Create(t.Context(), expectedID, contract.Manufacturer{

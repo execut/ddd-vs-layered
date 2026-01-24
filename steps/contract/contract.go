@@ -9,6 +9,7 @@ type IApplication interface {
     Update(ctx context.Context, labelTemplateID string, manufacturer Manufacturer) error
     HistoryList(ctx context.Context, labelTemplateID string) ([]LabelTemplateHistoryRow, error)
     AddCategoryList(ctx context.Context, labelTemplateID string, categoryList []Category) error
+    Cleanup(ctx context.Context, labelTemplateID string) error
 }
 
 type LabelTemplateHistoryList struct {
