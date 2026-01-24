@@ -20,12 +20,12 @@ func InitLabelsTemplateHistory(ctx context.Context, app contract.IApplication) e
                 return err
             }
 
-            resultJson, err := json.Marshal(result)
+            resultJSON, err := json.Marshal(result)
             if err != nil {
                 return err
             }
 
-            fmt.Println(resultJson)
+            fmt.Println(string(resultJSON))
 
             return nil
         },

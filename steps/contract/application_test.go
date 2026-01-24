@@ -28,6 +28,7 @@ var (
 
 func TestLabelTemplate_Live(t *testing.T) {
     t.Parallel()
+
     app, err := presentation.NewApplication()
     require.NoError(t, err)
 
@@ -125,7 +126,8 @@ func TestLabelTemplate_Live(t *testing.T) {
         require.Error(t, err)
         require.ErrorContains(t, err, "попытка удалить уже удалённый шаблон")
     })
-    t.Run("6. Чтобы возвращалась уникальная ошибка при попытке создать шаблон, если длина Наименования организации производителя", func(t *testing.T) {
+    t.Run("6. Чтобы возвращалась уникальная ошибка при попытке создать шаблон, если длина Наименования "+
+        "организации производителя", func(t *testing.T) {
         t.Run("> 255", func(t *testing.T) {
             err := app.Create(t.Context(), expectedID, contract.Manufacturer{
                 OrganizationName: strings.Repeat("a", 256),
@@ -145,6 +147,7 @@ func TestLabelTemplate_Live(t *testing.T) {
     })
 
     t.Run("9. При создании шаблона возвращать ошибку с понятным описанием", func(t *testing.T) {
+
         type args struct {
             fieldName           string
             organizationAddress string
@@ -152,6 +155,7 @@ func TestLabelTemplate_Live(t *testing.T) {
             site                string
             errorMessage        string
         }
+
         t.Run("если длина следующих полей >255 или = 0", func(t *testing.T) {
             tests := []args{
                 {
@@ -176,16 +180,16 @@ func TestLabelTemplate_Live(t *testing.T) {
                     errorMessage:        "сайт должен быть до 255 символов в длину",
                 },
             }
-            for _, tt := range tests {
+            for _, ttForLengthErrors := range tests {
                 err := app.Create(t.Context(), expectedID, contract.Manufacturer{
                     OrganizationName:    expectedManufacturerOrganizationName,
-                    OrganizationAddress: tt.organizationAddress,
-                    Email:               tt.email,
-                    Site:                tt.site,
+                    OrganizationAddress: ttForLengthErrors.organizationAddress,
+                    Email:               ttForLengthErrors.email,
+                    Site:                ttForLengthErrors.site,
                 })
 
                 require.Error(t, err)
-                assert.ErrorContains(t, err, tt.errorMessage)
+                assert.ErrorContains(t, err, ttForLengthErrors.errorMessage)
             }
         })
 
@@ -206,21 +210,22 @@ func TestLabelTemplate_Live(t *testing.T) {
                     errorMessage:        "сайт имеет не корректный формат",
                 },
             }
-            for _, tt := range tests {
+            for _, ttForWrongFormat := range tests {
                 err := app.Create(t.Context(), expectedID, contract.Manufacturer{
                     OrganizationName:    expectedManufacturerOrganizationName,
-                    OrganizationAddress: tt.organizationAddress,
-                    Email:               tt.email,
-                    Site:                tt.site,
+                    OrganizationAddress: ttForWrongFormat.organizationAddress,
+                    Email:               ttForWrongFormat.email,
+                    Site:                ttForWrongFormat.site,
                 })
 
                 require.Error(t, err)
-                assert.ErrorContains(t, err, tt.errorMessage)
+                assert.ErrorContains(t, err, ttForWrongFormat.errorMessage)
             }
         })
     })
 
-    t.Run("10. Чтобы писалась история операций над шаблонами с возможностью выводить все данные в json", func(t *testing.T) {
+    t.Run("10. Чтобы писалась история операций над шаблонами с возможностью"+
+        " выводить все данные в json", func(t *testing.T) {
         result, err := app.HistoryList(t.Context(), expectedID)
 
         require.NoError(t, err)

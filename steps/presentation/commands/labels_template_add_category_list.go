@@ -25,6 +25,7 @@ func InitLabelsTemplateAddCategoryList(ctx context.Context, app contract.IApplic
                     TypeID:     &categoryIDParts[1],
                 })
             }
+
             err := app.AddCategoryList(ctx, labelTemplateID, appCategoryList)
             if err != nil {
                 panic(err)
