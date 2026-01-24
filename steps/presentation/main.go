@@ -1,7 +1,7 @@
 package main
 
 import (
-    "effective-architecture/steps/commands"
+    "effective-architecture/steps/presentation/commands"
     "golang.org/x/text/cases"
     "golang.org/x/text/language"
 )
