@@ -3,9 +3,8 @@ package commands
 import (
     "context"
 
-    "effective-architecture/steps/application"
-    "effective-architecture/steps/infrastructure"
-    "effective-architecture/steps/infrastructure/history"
+    "effective-architecture/steps/contract"
+    "effective-architecture/steps/presentation"
     "github.com/spf13/cobra"
 )
 
@@ -20,7 +19,7 @@ var (
     organizationAddress string
     site                string
     email               string
-    initiators          = []func(ctx context.Context, app *application.Application) error{
+    initiators          = []func(ctx context.Context, app contract.IApplication) error{
         InitLabelsCreateTemplate,
         InitLabelsDeleteTemplate,
         InitLabelsGetTemplate,
@@ -33,17 +32,7 @@ var (
 func Execute() error {
     ctx := context.Background()
 
-    repository, err := infrastructure.NewEventsRepository()
-    if err != nil {
-        panic(err)
-    }
-
-    historyRepository, err := history.NewRepository()
-    if err != nil {
-        panic(err)
-    }
-
-    app, err := application.NewApplication(repository, historyRepository)
+    app, err := presentation.NewApplication(ctx)
     if err != nil {
         panic(err)
     }

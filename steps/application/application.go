@@ -2,15 +2,15 @@ package application
 
 import (
     "context"
-    "encoding/json"
     "errors"
     "strconv"
-    "strings"
 
+    "effective-architecture/steps/contract"
     "effective-architecture/steps/domain"
     "effective-architecture/steps/domain/history"
-    "effective-architecture/steps/infrastructure"
 )
+
+var _ contract.IApplication = (*Application)(nil)
 
 var ErrCategoryEmpty = errors.New("wrong category")
 
@@ -20,20 +20,20 @@ type Application struct {
     historyRepository history.IRepository
 }
 
-func NewApplication(repository *infrastructure.EventsRepository,
+func NewApplication(repository domain.IRepository,
     historyRepository history.IRepository) (*Application, error) {
     dispatcher := domain.NewDispatcher([]domain.Subscriber{
         history.NewSubscriber(historyRepository),
     })
 
     return &Application{
-        repository:        infrastructure.NewRepository(repository),
+        repository:        repository,
         historyRepository: historyRepository,
         dispatcher:        dispatcher,
     }, nil
 }
 
-func (a *Application) CreateLabelTemplate(ctx context.Context, id string, manufacturer Manufacturer) error {
+func (a *Application) Create(ctx context.Context, id string, manufacturer contract.Manufacturer) error {
     domainLabel, err := a.loadLabelTemplate(ctx, id)
     if err != nil {
         return err
@@ -62,27 +62,22 @@ func (a *Application) CreateLabelTemplate(ctx context.Context, id string, manufa
     return nil
 }
 
-func (a *Application) GetLabelTemplate(ctx context.Context, id string) (string, error) {
+func (a *Application) Get(ctx context.Context, id string) (contract.LabelTemplate, error) {
     domainLabel, err := a.loadLabelTemplate(ctx, id)
     if err != nil {
-        return "", err
+        return contract.LabelTemplate{}, err
     }
 
     response := mapManufacturerToResponse(domainLabel.Manufacturer)
-    responseObj := GetLabelTemplateResponse{
+    responseObj := contract.LabelTemplate{
         ID:           domainLabel.ID.UUID.String(),
         Manufacturer: response,
     }
 
-    responseMarshaled, err := json.Marshal(responseObj)
-    if err != nil {
-        return "", err
-    }
-
-    return string(responseMarshaled), nil
+    return responseObj, nil
 }
 
-func (a *Application) DeleteLabelTemplate(ctx context.Context, id string) error {
+func (a *Application) Delete(ctx context.Context, id string) error {
     domainLabel, err := a.loadLabelTemplate(ctx, id)
     if err != nil {
         return err
@@ -106,7 +101,7 @@ func (a *Application) DeleteLabelTemplate(ctx context.Context, id string) error 
     return nil
 }
 
-func (a *Application) UpdateLabelTemplate(ctx context.Context, uuid string, manufacturer Manufacturer) error {
+func (a *Application) Update(ctx context.Context, uuid string, manufacturer contract.Manufacturer) error {
     domainLabel, err := a.loadLabelTemplate(ctx, uuid)
     if err != nil {
         return err
@@ -135,21 +130,21 @@ func (a *Application) UpdateLabelTemplate(ctx context.Context, uuid string, manu
     return nil
 }
 
-func (a *Application) LabelTemplateHistoryList(ctx context.Context, id string) (string, error) {
+func (a *Application) HistoryList(ctx context.Context, id string) ([]contract.LabelTemplateHistoryRow, error) {
     domainAggregateID, err := domain.NewLabelTemplateID(id)
     if err != nil {
-        return "", err
+        return nil, err
     }
 
     domainHistoryList, err := a.historyRepository.List(ctx, domainAggregateID)
     if err != nil {
-        return "", err
+        return nil, err
     }
 
-    result := []LabelTemplateHistoryRow{}
+    result := []contract.LabelTemplateHistoryRow{}
 
     for _, domainHistory := range domainHistoryList {
-        historyRow := LabelTemplateHistoryRow{
+        historyRow := contract.LabelTemplateHistoryRow{
             OrderKey: domainHistory.OrderKey,
             Action:   domainHistory.Action,
         }
@@ -173,34 +168,22 @@ func (a *Application) LabelTemplateHistoryList(ctx context.Context, id string) (
         result = append(result, historyRow)
     }
 
-    resultString, err := json.Marshal(result)
-    if err != nil {
-        return "", err
-    }
-
-    return string(resultString), nil
+    return result, nil
 }
 
-func (a *Application) LabelTemplateAddCategoryList(ctx context.Context, labelTemplateID string,
-    categoryList []string) error {
+func (a *Application) AddCategoryList(ctx context.Context, labelTemplateID string,
+    categoryList []contract.Category) error {
     domainCategoryList := make([]domain.Category, 0, len(categoryList))
     for _, category := range categoryList {
-        categoryParts := strings.Split(category, "-")
-
-        var categoryTypeID *int64
-
-        if len(categoryParts) == 0 {
-            return ErrCategoryEmpty
-        }
-
-        categoryID, err := strconv.ParseInt(categoryParts[0], 10, 64)
+        categoryID, err := strconv.ParseInt(category.CategoryID, 10, 64)
         if err != nil {
             return err
         }
 
-        const partsLimit = 2
-        if len(categoryParts) == partsLimit {
-            categoryTypeIDValue, err := strconv.ParseInt(categoryParts[1], 10, 64)
+        var categoryTypeID *int64
+
+        if category.TypeID != nil {
+            categoryTypeIDValue, err := strconv.ParseInt(*category.TypeID, 10, 64)
             if err != nil {
                 return err
             }
@@ -227,6 +210,25 @@ func (a *Application) LabelTemplateAddCategoryList(ctx context.Context, labelTem
     }
 
     err = a.repository.Save(ctx, domainLabel)
+    if err != nil {
+        return err
+    }
+
+    return nil
+}
+
+func (a *Application) Cleanup(ctx context.Context, id string) error {
+    domainID, err := domain.NewLabelTemplateID(id)
+    if err != nil {
+        return err
+    }
+
+    err = a.repository.Cleanup(ctx, domainID)
+    if err != nil {
+        return err
+    }
+
+    err = a.historyRepository.Cleanup(ctx, domainID)
     if err != nil {
         return err
     }
@@ -265,7 +267,7 @@ type Manufacturer struct {
     Email               string `json:"email,omitempty"`
 }
 
-func mapManufacturerToDomain(manufacturer Manufacturer) (domain.Manufacturer, error) {
+func mapManufacturerToDomain(manufacturer contract.Manufacturer) (domain.Manufacturer, error) {
     newDomainManufacturerOrganizationName, err := domain.NewOrganizationName(manufacturer.OrganizationName)
     if err != nil {
         return domain.Manufacturer{}, err
@@ -313,8 +315,8 @@ func mapManufacturerToDomain(manufacturer Manufacturer) (domain.Manufacturer, er
     return domainManufacturer, nil
 }
 
-func mapManufacturerToResponse(domainManufacturer domain.Manufacturer) Manufacturer {
-    manufacturer := Manufacturer{
+func mapManufacturerToResponse(domainManufacturer domain.Manufacturer) contract.Manufacturer {
+    manufacturer := contract.Manufacturer{
         OrganizationName: domainManufacturer.OrganizationName.Name,
     }
 

@@ -4,17 +4,17 @@ import (
     "context"
     "fmt"
 
-    "effective-architecture/steps/application"
+    "effective-architecture/steps/contract"
     "github.com/spf13/cobra"
 )
 
-func InitLabelsUpdateTemplate(ctx context.Context, app *application.Application) error {
-    var updateLabelTemplateCmd = &cobra.Command{
-        Use:   "labels-update-template",
+func InitLabelsCreateTemplate(ctx context.Context, app contract.IApplication) error {
+    var createLabelTemplateCmd = &cobra.Command{
+        Use:   "labels-create-template",
         Short: "",
         Long:  ``,
         Run: func(_ *cobra.Command, _ []string) {
-            err := app.UpdateLabelTemplate(ctx, labelTemplateID, application.Manufacturer{
+            err := app.Create(ctx, labelTemplateID, contract.Manufacturer{
                 OrganizationName:    organizationName,
                 OrganizationAddress: organizationAddress,
                 Email:               email,
@@ -28,8 +28,8 @@ func InitLabelsUpdateTemplate(ctx context.Context, app *application.Application)
         },
     }
 
-    initManufacturerFlags(updateLabelTemplateCmd)
-    rootCmd.AddCommand(updateLabelTemplateCmd)
+    initManufacturerFlags(createLabelTemplateCmd)
+    rootCmd.AddCommand(createLabelTemplateCmd)
 
     return nil
 }

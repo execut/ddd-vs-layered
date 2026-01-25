@@ -8,6 +8,7 @@ import (
     "time"
 
     "effective-architecture/steps/domain"
+
     "github.com/jackc/pgx/v5"
 )
 
@@ -84,6 +85,10 @@ func (r Repository) Save(ctx context.Context, aggregate *domain.LabelTemplate) e
     }
 
     return nil
+}
+
+func (r Repository) Cleanup(ctx context.Context, id domain.LabelTemplateID) error {
+    return r.db.Cleanup(ctx, id.UUID)
 }
 
 func applyEvent[T domain.LabelTemplateEvent](model EventModel, aggregate *domain.LabelTemplate) error {

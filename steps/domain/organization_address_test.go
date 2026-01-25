@@ -1,10 +1,11 @@
-package test_test
+package domain_test
 
 import (
     "strings"
     "testing"
 
     "effective-architecture/steps/domain"
+
     "github.com/stretchr/testify/require"
 )
 

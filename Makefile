@@ -4,7 +4,7 @@ recreate_db:
 	@sleep 2
 
 build:
-	@go build -o bin/main  steps/main.go
+	@go build -o bin/main  steps/presentation/cmd/main.go
 
 all_checks: recreate_db build
 	DATABASE_URL=postgres://postgres@localhost:15432/labels go test ./...
