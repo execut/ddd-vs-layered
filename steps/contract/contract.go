@@ -22,12 +22,13 @@ type LabelTemplate struct {
 }
 
 type LabelTemplateHistoryRow struct {
-    OrderKey                           int    `json:"orderKey"`
-    Action                             string `json:"action"`
-    NewManufacturerOrganizationName    string `json:"newManufacturerOrganizationName,omitempty"`
-    NewManufacturerOrganizationAddress string `json:"newManufacturerOrganizationAddress,omitempty"`
-    NewManufacturerEmail               string `json:"newManufacturerEmail,omitempty"`
-    NewManufacturerSite                string `json:"newManufacturerSite,omitempty"`
+    OrderKey                           int        `json:"orderKey"`
+    Action                             string     `json:"action"`
+    NewManufacturerOrganizationName    string     `json:"newManufacturerOrganizationName,omitempty"`
+    NewManufacturerOrganizationAddress string     `json:"newManufacturerOrganizationAddress,omitempty"`
+    NewManufacturerEmail               string     `json:"newManufacturerEmail,omitempty"`
+    NewManufacturerSite                string     `json:"newManufacturerSite,omitempty"`
+    CategoryList                       []Category `json:"categoryList"`
 }
 
 type Manufacturer struct {
