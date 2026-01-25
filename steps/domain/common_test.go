@@ -1,8 +1,6 @@
-package test_test
+package domain_test
 
-import (
-    "effective-architecture/steps/domain"
-)
+import "effective-architecture/steps/domain"
 
 const (
     expectedUUIDValue                            = "123e4567-e89b-12d3-a456-426655440000"
