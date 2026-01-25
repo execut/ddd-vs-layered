@@ -2,11 +2,19 @@ package commands
 
 import (
     "context"
+    "errors"
     "fmt"
     "strings"
 
     "effective-architecture/steps/contract"
+
     "github.com/spf13/cobra"
+)
+
+var ErrWrongCategory = errors.New("wrong category")
+
+const (
+    categoryWithTypeLen = 2
 )
 
 func InitLabelsTemplateAddCategoryList(ctx context.Context, app contract.IApplication) error {
@@ -16,22 +24,35 @@ func InitLabelsTemplateAddCategoryList(ctx context.Context, app contract.IApplic
         Use:   "labels-template-add-category-list",
         Short: "",
         Long:  ``,
-        Run: func(_ *cobra.Command, _ []string) {
+        RunE: func(_ *cobra.Command, _ []string) error {
             appCategoryList := make([]contract.Category, 0, len(categoryList))
             for _, categoryID := range categoryList {
                 categoryIDParts := strings.Split(categoryID, "-")
+
+                var typeID *string
+
+                if len(categoryIDParts) == 0 {
+                    return ErrWrongCategory
+                }
+
+                if len(categoryIDParts) == categoryWithTypeLen {
+                    typeID = &categoryIDParts[1]
+                }
+
                 appCategoryList = append(appCategoryList, contract.Category{
                     CategoryID: categoryIDParts[0],
-                    TypeID:     &categoryIDParts[1],
+                    TypeID:     typeID,
                 })
             }
 
             err := app.AddCategoryList(ctx, labelTemplateID, appCategoryList)
             if err != nil {
-                panic(err)
+                return err
             }
 
             fmt.Println("1")
+
+            return nil
         },
     }
 
