@@ -1,5 +1,9 @@
 package service
 
+import (
+    "github.com/google/uuid"
+)
+
 type LabelTemplate struct {
     ID                              string
     ManufacturerOrganizationName    string
@@ -9,6 +13,7 @@ type LabelTemplate struct {
 }
 
 type LabelTemplateHistory struct {
+    ID                                 uuid.UUID
     LabelTemplateID                    string
     OrderKey                           string
     Action                             string
@@ -16,6 +21,12 @@ type LabelTemplateHistory struct {
     NewManufacturerOrganizationAddress string
     NewManufacturerEmail               string
     NewManufacturerSite                string
+    CategoryList                       []HistoryCategory
+}
+
+type HistoryCategory struct {
+    CategoryID int64
+    TypeID     *int64
 }
 
 type LabelTemplateHistoryResult struct {
@@ -25,6 +36,7 @@ type LabelTemplateHistoryResult struct {
     NewManufacturerOrganizationAddress string `json:"newManufacturerOrganizationAddress,omitempty"`
     NewManufacturerEmail               string `json:"newManufacturerEmail,omitempty"`
     NewManufacturerSite                string `json:"newManufacturerSite,omitempty"`
+    CategoryList                       []HistoryCategory
 }
 
 type LabelTemplateVsCategory struct {
