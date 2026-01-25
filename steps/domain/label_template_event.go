@@ -16,3 +16,7 @@ type LabelTemplateDeletedEvent struct {
 type LabelTemplateCategoryListAddedEvent struct {
     CategoryList []Category
 }
+
+type LabelTemplateCategoryListUnlinkedEvent struct {
+    CategoryList []Category
+}

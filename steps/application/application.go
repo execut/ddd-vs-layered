@@ -173,30 +173,9 @@ func (a *Application) HistoryList(ctx context.Context, id string) ([]contract.La
 
 func (a *Application) AddCategoryList(ctx context.Context, labelTemplateID string,
     categoryList []contract.Category) error {
-    domainCategoryList := make([]domain.Category, 0, len(categoryList))
-    for _, category := range categoryList {
-        categoryID, err := strconv.ParseInt(category.CategoryID, 10, 64)
-        if err != nil {
-            return err
-        }
-
-        var categoryTypeID *int64
-
-        if category.TypeID != nil {
-            categoryTypeIDValue, err := strconv.ParseInt(*category.TypeID, 10, 64)
-            if err != nil {
-                return err
-            }
-
-            categoryTypeID = &categoryTypeIDValue
-        }
-
-        domainCategory, err := domain.NewCategory(categoryID, categoryTypeID)
-        if err != nil {
-            return err
-        }
-
-        domainCategoryList = append(domainCategoryList, domainCategory)
+    domainCategoryList, err := mapCategoryFromContractToDomain(categoryList)
+    if err != nil {
+        return err
     }
 
     domainLabel, err := a.loadLabelTemplate(ctx, labelTemplateID)
@@ -205,6 +184,31 @@ func (a *Application) AddCategoryList(ctx context.Context, labelTemplateID strin
     }
 
     err = domainLabel.AddCategoryList(domainCategoryList)
+    if err != nil {
+        return err
+    }
+
+    err = a.repository.Save(ctx, domainLabel)
+    if err != nil {
+        return err
+    }
+
+    return nil
+}
+
+func (a *Application) UnlinkCategoryList(ctx context.Context, labelTemplateID string,
+    categoryList []contract.Category) error {
+    domainCategoryList, err := mapCategoryFromContractToDomain(categoryList)
+    if err != nil {
+        return err
+    }
+
+    domainLabel, err := a.loadLabelTemplate(ctx, labelTemplateID)
+    if err != nil {
+        return err
+    }
+
+    err = domainLabel.UnlinkCategoryList(domainCategoryList)
     if err != nil {
         return err
     }
@@ -234,6 +238,36 @@ func (a *Application) Cleanup(ctx context.Context, id string) error {
     }
 
     return nil
+}
+
+func mapCategoryFromContractToDomain(categoryList []contract.Category) ([]domain.Category, error) {
+    domainCategoryList := make([]domain.Category, 0, len(categoryList))
+    for _, category := range categoryList {
+        categoryID, err := strconv.ParseInt(category.CategoryID, 10, 64)
+        if err != nil {
+            return nil, err
+        }
+
+        var categoryTypeID *int64
+
+        if category.TypeID != nil {
+            categoryTypeIDValue, err := strconv.ParseInt(*category.TypeID, 10, 64)
+            if err != nil {
+                return nil, err
+            }
+
+            categoryTypeID = &categoryTypeIDValue
+        }
+
+        domainCategory, err := domain.NewCategory(categoryID, categoryTypeID)
+        if err != nil {
+            return nil, err
+        }
+
+        domainCategoryList = append(domainCategoryList, domainCategory)
+    }
+
+    return domainCategoryList, nil
 }
 
 func (a *Application) loadLabelTemplate(ctx context.Context, id string) (*domain.LabelTemplate, error) {

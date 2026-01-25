@@ -75,4 +75,17 @@ func TestLabelTemplate_Live(t *testing.T) {
             require.ErrorContains(t, err, " (категория 1, тип 2)")
         })
     })
+
+    t.Run("12. Отвязывать шаблон от списка категорий или категорий+типов", func(t *testing.T) {
+        err = labelTemplate.UnlinkCategoryList([]domain.Category{expectedCategory1, expectedCategory2})
+
+        require.NoError(t, err)
+
+        t.Run("и получать ошибку при попытке отвязать уже отвязанную категорию", func(t *testing.T) {
+            err = labelTemplate.UnlinkCategoryList([]domain.Category{expectedCategory2})
+
+            require.Error(t, err)
+            assert.ErrorContains(t, err, "категория уже отвязана от шаблона (категория 3, тип 4)")
+        })
+    })
 }
