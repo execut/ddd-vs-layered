@@ -23,7 +23,12 @@ func NewApplication(ctx context.Context) (*service.Service, error) {
         return nil, err
     }
 
-    return service.NewService(repository, historyRepository), nil
+    categoryRepository, err := service.NewVsCategoryRepository(ctx)
+    if err != nil {
+        return nil, err
+    }
+
+    return service.NewService(repository, historyRepository, categoryRepository), nil
 }
 
 func (a *Application) Create(ctx context.Context, labelTemplateID string, manufacturer contract.Manufacturer) error {
