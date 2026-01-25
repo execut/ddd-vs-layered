@@ -65,6 +65,15 @@ func (a *Application) AddCategoryList(ctx context.Context, labelTemplateID strin
     return nil
 }
 
+func (a *Application) UnlinkCategoryList(ctx context.Context, labelTemplateID string,
+    categoryList []contract.Category) error {
+    _ = ctx
+    _ = labelTemplateID
+    _ = categoryList
+
+    return nil
+}
+
 func (a *Application) Cleanup(ctx context.Context, labelTemplateID string) error {
     _ = ctx
     _ = labelTemplateID
