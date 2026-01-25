@@ -3,7 +3,10 @@ package presentation
 import (
     "context"
 
+    "effective-architecture/steps/application"
     "effective-architecture/steps/contract"
+    "effective-architecture/steps/infrastructure"
+    "effective-architecture/steps/infrastructure/history"
 )
 
 var _ contract.IApplication = (*Application)(nil)
@@ -11,10 +14,22 @@ var _ contract.IApplication = (*Application)(nil)
 type Application struct {
 }
 
-func NewApplication(ctx context.Context) (*Application, error) {
-    _ = ctx
+func NewApplication(ctx context.Context) (*application.Application, error) {
+    eventRepository, err := infrastructure.NewEventsRepository()
+    if err != nil {
+        return nil, err
+    }
+    repository := infrastructure.NewRepository(eventRepository)
+    historyRepository, err := history.NewRepository()
+    if err != nil {
+        return nil, err
+    }
 
-    return &Application{}, nil
+    app, err := application.NewApplication(repository, historyRepository)
+    if err != nil {
+        return nil, err
+    }
+    return app, nil
 }
 
 func (a *Application) Create(ctx context.Context, labelTemplateID string, manufacturer contract.Manufacturer) error {
