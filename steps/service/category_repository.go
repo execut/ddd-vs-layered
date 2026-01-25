@@ -7,9 +7,11 @@ import (
     "strings"
 
     "github.com/jackc/pgx/v5"
+    "github.com/jackc/pgx/v5/pgconn"
 )
 
 var ErrVsCategoryAlreadyCreated = errors.New("категория уже привязана к шаблону")
+var ErrVsCategoryAlreadyDeleted = errors.New("категория уже отвязана от шаблона")
 
 type VsCategoryRepository struct {
     conn *pgx.Conn
@@ -51,7 +53,37 @@ func (r VsCategoryRepository) Create(ctx context.Context, model LabelTemplateVsC
     return nil
 }
 
-func (r VsCategoryRepository) Delete(ctx context.Context, labelTemplateID string) error {
+func (r VsCategoryRepository) Delete(ctx context.Context, model LabelTemplateVsCategory) error {
+    var (
+        result pgconn.CommandTag
+        err    error
+    )
+
+    sql := `DELETE FROM label_template_vs_categories WHERE label_template_id = $1 AND category_id=$2`
+    if model.TypeID == nil {
+        result, err = r.conn.Exec(ctx, sql, model.LabelTemplateID, model.CategoryID)
+        if err != nil {
+            return err
+        }
+    } else {
+        result, err = r.conn.Exec(ctx, sql+" AND type_id=$3", model.LabelTemplateID, model.CategoryID, *model.TypeID)
+        if err != nil {
+            return err
+        }
+    }
+
+    if result.RowsAffected() == 0 {
+        if model.TypeID == nil {
+            return fmt.Errorf("%w (категория %v)", ErrVsCategoryAlreadyDeleted, model.CategoryID)
+        }
+
+        return fmt.Errorf("%w (категория %v, тип %v)", ErrVsCategoryAlreadyDeleted, model.CategoryID, *model.TypeID)
+    }
+
+    return nil
+}
+
+func (r VsCategoryRepository) DeleteByLabelTemplateID(ctx context.Context, labelTemplateID string) error {
     sql := `DELETE FROM label_template_vs_categories WHERE label_template_id = $1`
 
     result, err := r.conn.Exec(ctx, sql, labelTemplateID)

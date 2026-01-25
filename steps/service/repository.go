@@ -12,6 +12,7 @@ var (
     ErrCouldNotCreate = errors.New("could not create label template")
     ErrCouldNotDelete   = errors.New("could not delete label template")
     ErrCouldNotUpdate   = errors.New("could not update label template")
+    ErrAlreadyDeleted   = errors.New("")
 )
 
 type Repository struct {

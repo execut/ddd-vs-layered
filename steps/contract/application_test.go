@@ -296,4 +296,30 @@ func TestLabelTemplate_Live(t *testing.T) {
             assert.ErrorContains(t, err, "категория уже привязана к шаблону (категория 2, тип 3)")
         })
     })
+
+    t.Run("12. Отвязывать шаблон от списка категорий или категорий+типов", func(t *testing.T) {
+        err = app.UnlinkCategoryList(t.Context(), expectedID, []contract.Category{
+            {
+                CategoryID: "1",
+            },
+            {
+                CategoryID: "2",
+                TypeID:     &expectedCategory2TypeID,
+            },
+        })
+
+        require.NoError(t, err)
+
+        t.Run("и получать ошибку при попытке отвязать уже отвязанную категорию", func(t *testing.T) {
+            err = app.UnlinkCategoryList(t.Context(), expectedID, []contract.Category{
+                {
+                    CategoryID: "2",
+                    TypeID:     &expectedCategory2TypeID,
+                },
+            })
+
+            require.Error(t, err)
+            assert.ErrorContains(t, err, "категория уже отвязана от шаблона (категория 2, тип 3)")
+        })
+    })
 }
