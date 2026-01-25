@@ -28,7 +28,7 @@ func NewRepository(conn *pgx.Conn) (*Repository, error) {
 }
 
 func (r Repository) Create(ctx context.Context, history history.History) error {
-    sql := "INSERT INTO label_templates_history VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"
+    sql := "INSERT INTO label_templates_history VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)"
 
     var (
         newManufacturerOrganizationName    *string
@@ -53,7 +53,7 @@ func (r Repository) Create(ctx context.Context, history history.History) error {
         newManufacturerSite = &history.NewManufacturerSite.Value
     }
 
-    result, err := r.conn.Exec(ctx, sql, history.AggregateID.UUID.String(),
+    result, err := r.conn.Exec(ctx, sql, history.ID.String(), history.AggregateID.UUID.String(),
         strconv.Itoa(history.OrderKey), history.Action,
         newManufacturerOrganizationName, newManufacturerOrganizationAddress, newManufacturerEmail, newManufacturerSite,
         time.Now())
@@ -65,11 +65,24 @@ func (r Repository) Create(ctx context.Context, history history.History) error {
         return ErrCouldNotCreate
     }
 
+    for _, category := range history.CategoryList {
+        sql := "INSERT INTO label_templates_history_categories VALUES ($1, $2, $3)"
+
+        result, err := r.conn.Exec(ctx, sql, history.ID.String(), category.CategoryID, category.TypeID)
+        if err != nil {
+            return err
+        }
+
+        if result.RowsAffected() == 0 {
+            return ErrCouldNotCreate
+        }
+    }
+
     return nil
 }
 
 func (r Repository) List(ctx context.Context, aggregateID domain.LabelTemplateID) ([]history.History, error) {
-    sql := `SELECT order_key, action, new_manufacturer_organization_name, new_manufacturer_organization_address,
+    sql := `SELECT id, order_key, action, new_manufacturer_organization_name, new_manufacturer_organization_address,
        new_manufacturer_email, new_manufacturer_site FROM label_templates_history WHERE label_template_id=$1
                                                                                   ORDER BY order_key
    `
@@ -79,12 +92,12 @@ func (r Repository) List(ctx context.Context, aggregateID domain.LabelTemplateID
         return nil, fmt.Errorf("error select history list: %w", err)
     }
 
-    result := make([]history.History, 0)
+    historyModelList := make([]History, 0)
 
     for rows.Next() {
         var historyModel = History{}
 
-        err := rows.Scan(&historyModel.OrderKey, &historyModel.Action,
+        err := rows.Scan(&historyModel.ID, &historyModel.OrderKey, &historyModel.Action,
             &historyModel.NewManufacturerOrganizationNameValue,
             &historyModel.NewManufacturerOrganizationAddressValue,
             &historyModel.NewManufacturerEmailValue, &historyModel.NewManufacturerSiteValue)
@@ -92,7 +105,17 @@ func (r Repository) List(ctx context.Context, aggregateID domain.LabelTemplateID
             return nil, fmt.Errorf("error scan history row: %w", err)
         }
 
-        domainHistory, err := mapHistoryToDomain(historyModel, aggregateID)
+        historyModelList = append(historyModelList, historyModel)
+    }
+
+    result := make([]history.History, 0, len(historyModelList))
+    for _, historyModel := range historyModelList {
+        categoryList, err := r.categoryList(ctx, historyModel.ID)
+        if err != nil {
+            return nil, fmt.Errorf("error get category list: %w", err)
+        }
+
+        domainHistory, err := mapHistoryToDomain(historyModel, aggregateID, categoryList)
         if err != nil {
             return nil, err
         }
@@ -112,7 +135,50 @@ func (r Repository) Cleanup(ctx context.Context, id domain.LabelTemplateID) erro
     return nil
 }
 
-func mapHistoryToDomain(historyModel History, aggregateID domain.LabelTemplateID) (history.History, error) {
+func (r Repository) Count(ctx context.Context, aggregateID domain.LabelTemplateID) (int, error) {
+    sql := `SELECT count(*) FROM label_templates_history WHERE label_template_id=$1`
+
+    var count int
+
+    err := r.conn.QueryRow(ctx, sql, aggregateID.UUID.String()).Scan(&count)
+    if err != nil {
+        return 0, fmt.Errorf("failed to count history: %w", err)
+    }
+
+    return count, nil
+}
+
+func (r Repository) categoryList(ctx context.Context, historyID string) ([]domain.Category, error) {
+    sql := `SELECT category_id, type_id FROM label_templates_history_categories WHERE history_id=$1`
+
+    rows, err := r.conn.Query(ctx, sql, historyID)
+    if err != nil {
+        return nil, fmt.Errorf("error select history categoy list: %w", err)
+    }
+
+    result := make([]domain.Category, 0)
+
+    for rows.Next() {
+        var category = Category{}
+
+        err := rows.Scan(&category.CategoryID, &category.TypeID)
+        if err != nil {
+            return nil, fmt.Errorf("error scan history category row: %w", err)
+        }
+
+        domainCategory, err := domain.NewCategory(category.CategoryID, category.TypeID)
+        if err != nil {
+            return nil, err
+        }
+
+        result = append(result, domainCategory)
+    }
+
+    return result, nil
+}
+
+func mapHistoryToDomain(historyModel History, aggregateID domain.LabelTemplateID,
+    categoryList []domain.Category) (history.History, error) {
     var (
         newManufacturerOrganizationName    *domain.OrganizationName
         newManufacturerOrganizationAddress *domain.OrganizationAddress
@@ -161,23 +227,10 @@ func mapHistoryToDomain(historyModel History, aggregateID domain.LabelTemplateID
     domainHistory, err := history.NewHistory(aggregateID, historyModel.OrderKey, historyModel.Action,
         newManufacturerOrganizationName,
         newManufacturerOrganizationAddress, newManufacturerEmail,
-        newManufacturerSite)
+        newManufacturerSite, categoryList)
     if err != nil {
         return history.History{}, err
     }
 
     return domainHistory, nil
-}
-
-func (r Repository) Count(ctx context.Context, aggregateID domain.LabelTemplateID) (int, error) {
-    sql := `SELECT count(*) FROM label_templates_history WHERE label_template_id=$1`
-
-    var count int
-
-    err := r.conn.QueryRow(ctx, sql, aggregateID.UUID.String()).Scan(&count)
-    if err != nil {
-        return 0, fmt.Errorf("failed to count history: %w", err)
-    }
-
-    return count, nil
 }

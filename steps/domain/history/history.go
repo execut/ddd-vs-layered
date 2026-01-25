@@ -4,6 +4,8 @@ import (
     "errors"
 
     "effective-architecture/steps/domain"
+
+    "github.com/google/uuid"
 )
 
 var (
@@ -11,6 +13,7 @@ var (
 )
 
 type History struct {
+    ID                                 uuid.UUID
     AggregateID                        domain.LabelTemplateID
     OrderKey                           int
     Action                             string
@@ -18,17 +21,19 @@ type History struct {
     NewManufacturerOrganizationAddress *domain.OrganizationAddress
     NewManufacturerEmail               *domain.Email
     NewManufacturerSite                *domain.Site
+    CategoryList                       []domain.Category
 }
 
 func NewHistory(aggregateID domain.LabelTemplateID, orderKey int, action string,
     newManufacturerOrganizationName *domain.OrganizationName,
     newManufacturerOrganizationAddress *domain.OrganizationAddress, newManufacturerEmail *domain.Email,
-    newManufacturerSite *domain.Site) (History, error) {
+    newManufacturerSite *domain.Site, categoryList []domain.Category) (History, error) {
     return History{AggregateID: aggregateID, OrderKey: orderKey, Action: action,
         NewManufacturerOrganizationName:    newManufacturerOrganizationName,
         NewManufacturerOrganizationAddress: newManufacturerOrganizationAddress,
         NewManufacturerEmail:               newManufacturerEmail,
         NewManufacturerSite:                newManufacturerSite,
+        CategoryList:                       categoryList,
     }, nil
 }
 
@@ -40,6 +45,7 @@ func NewHistoryFromEvent(aggregate *domain.LabelTemplate,
         newManufacturerOrganizationAddress *domain.OrganizationAddress
         newManufacturerEmail               *domain.Email
         newManufacturerSite                *domain.Site
+        categoryList                       []domain.Category
     )
 
     switch payload := event.(type) {
@@ -57,11 +63,18 @@ func NewHistoryFromEvent(aggregate *domain.LabelTemplate,
         newManufacturerOrganizationAddress = payload.Manufacturer.OrganizationAddress
         newManufacturerEmail = payload.Manufacturer.Email
         newManufacturerSite = payload.Manufacturer.Site
+    case domain.LabelTemplateCategoryListAddedEvent:
+        action = "category_list_added"
+        categoryList = payload.CategoryList
+    case domain.LabelTemplateCategoryListUnlinkedEvent:
+        action = "category_list_unlinked"
+        categoryList = payload.CategoryList
     default:
         return History{}, ErrUnknownEventType
     }
 
     return History{
+        ID:                                 uuid.New(),
         AggregateID:                        aggregate.ID,
         OrderKey:                           currentCount + 1,
         Action:                             action,
@@ -69,5 +82,6 @@ func NewHistoryFromEvent(aggregate *domain.LabelTemplate,
         NewManufacturerOrganizationAddress: newManufacturerOrganizationAddress,
         NewManufacturerEmail:               newManufacturerEmail,
         NewManufacturerSite:                newManufacturerSite,
+        CategoryList:                       categoryList,
     }, nil
 }
