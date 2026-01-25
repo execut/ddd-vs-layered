@@ -28,7 +28,7 @@ type LabelTemplateHistoryRow struct {
     NewManufacturerOrganizationAddress string     `json:"newManufacturerOrganizationAddress,omitempty"`
     NewManufacturerEmail               string     `json:"newManufacturerEmail,omitempty"`
     NewManufacturerSite                string     `json:"newManufacturerSite,omitempty"`
-    CategoryList                       []Category `json:"categoryList"`
+    CategoryList                       []Category `json:"categoryList,omitempty"`
 }
 
 type Manufacturer struct {
