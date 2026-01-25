@@ -237,6 +237,7 @@ func TestLabelTemplate_Live(t *testing.T) {
             TypeID:     &expectedCategory2TypeID,
         }
     )
+
     t.Run("11. Привязывать шаблон к списку категорий или категорий+типов", func(t *testing.T) {
         err = app.AddCategoryList(t.Context(), expectedID, []contract.Category{
             expectedCategory1,
