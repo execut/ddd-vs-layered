@@ -25,26 +25,13 @@ var (
     ErrLabelTemplateManufacturerEmailWrongFormat            = errors.New("email имеет не корректный формат")
 )
 
-type IRepository interface {
-    Insert(ctx context.Context, model LabelTemplate) error
-    Find(ctx context.Context, id string) (LabelTemplate, error)
-    Update(ctx context.Context, model LabelTemplate) error
-    Delete(ctx context.Context, id string) error
-}
-
-type IHistoryRepository interface {
-    Create(ctx context.Context, model LabelTemplateHistory, orderKey int) error
-    FindAll(ctx context.Context, labelTemplateID string) ([]LabelTemplateHistoryResult, error)
-    Delete(ctx context.Context, labelTemplateID string) error
-}
-
 type Service struct {
-    repository           IRepository
-    historyRepository    IHistoryRepository
+    repository           *Repository
+    historyRepository    *HistoryRepository
     vsCategoryRepository *VsCategoryRepository
 }
 
-func NewService(repository IRepository, historyRepository IHistoryRepository,
+func NewService(repository *Repository, historyRepository *HistoryRepository,
     categoryRepository *VsCategoryRepository) *Service {
     return &Service{
         repository:           repository,
@@ -165,45 +152,57 @@ func (s Service) HistoryList(ctx context.Context, labelTemplateID string) ([]con
 
     result := make([]contract.LabelTemplateHistoryRow, 0, len(historyList))
     for _, history := range historyList {
-        result = append(result, contract.LabelTemplateHistoryRow{
-            OrderKey:                           history.OrderKey,
+        orderKey := history.OrderKey
+
+        orderKeyAsInt, err := strconv.Atoi(orderKey)
+        if err != nil {
+            return nil, err
+        }
+
+        row := contract.LabelTemplateHistoryRow{
+            OrderKey:                           orderKeyAsInt,
             Action:                             history.Action,
             NewManufacturerOrganizationName:    history.NewManufacturerOrganizationName,
             NewManufacturerOrganizationAddress: history.NewManufacturerOrganizationAddress,
             NewManufacturerEmail:               history.NewManufacturerEmail,
             NewManufacturerSite:                history.NewManufacturerSite,
-        })
+        }
+
+        if len(history.CategoryList) > 0 {
+            row.CategoryList = mapHistoryCategoryToContract(history.CategoryList)
+        }
+
+        result = append(result, row)
     }
 
     return result, nil
 }
 
 func (s Service) AddCategoryList(ctx context.Context, labelTemplateID string, categoryList []contract.Category) error {
-    for _, category := range categoryList {
-        categoryID, err := strconv.ParseInt(category.CategoryID, 10, 64)
+    vsCategoryModelList, err := createVsCategoryModelList(categoryList, labelTemplateID)
+    if err != nil {
+        return err
+    }
+
+    for _, vsCategoryModel := range vsCategoryModelList {
+        err := s.vsCategoryRepository.Create(ctx, vsCategoryModel)
         if err != nil {
             return err
         }
+    }
 
-        var typeID *int64
+    serviceCategoryList, err := mapHistoryCategoryToService(categoryList)
+    if err != nil {
+        return err
+    }
 
-        if category.TypeID != nil {
-            typeIDValue, err := strconv.ParseInt(*category.TypeID, 10, 64)
-            if err != nil {
-                return err
-            }
-
-            typeID = &typeIDValue
-        }
-
-        err = s.vsCategoryRepository.Create(ctx, LabelTemplateVsCategory{
-            LabelTemplateID: labelTemplateID,
-            CategoryID:      categoryID,
-            TypeID:          typeID,
-        })
-        if err != nil {
-            return err
-        }
+    err = s.historyRepository.Create(ctx, LabelTemplateHistory{
+        LabelTemplateID: labelTemplateID,
+        Action:          "category_list_added",
+        CategoryList:    serviceCategoryList,
+    }, 0)
+    if err != nil {
+        return err
     }
 
     return nil
@@ -211,31 +210,30 @@ func (s Service) AddCategoryList(ctx context.Context, labelTemplateID string, ca
 
 func (s Service) UnlinkCategoryList(ctx context.Context, labelTemplateID string,
     categoryList []contract.Category) error {
-    for _, category := range categoryList {
-        categoryID, err := strconv.ParseInt(category.CategoryID, 10, 64)
+    vsCategoryModelList, err := createVsCategoryModelList(categoryList, labelTemplateID)
+    if err != nil {
+        return err
+    }
+
+    for _, vsCategoryModel := range vsCategoryModelList {
+        err := s.vsCategoryRepository.Delete(ctx, vsCategoryModel)
         if err != nil {
             return err
         }
+    }
 
-        var typeID *int64
+    serviceCategoryList, err := mapHistoryCategoryToService(categoryList)
+    if err != nil {
+        return err
+    }
 
-        if category.TypeID != nil {
-            typeIDValue, err := strconv.ParseInt(*category.TypeID, 10, 64)
-            if err != nil {
-                return err
-            }
-
-            typeID = &typeIDValue
-        }
-
-        err = s.vsCategoryRepository.Delete(ctx, LabelTemplateVsCategory{
-            LabelTemplateID: labelTemplateID,
-            CategoryID:      categoryID,
-            TypeID:          typeID,
-        })
-        if err != nil {
-            return err
-        }
+    err = s.historyRepository.Create(ctx, LabelTemplateHistory{
+        LabelTemplateID: labelTemplateID,
+        Action:          "category_list_unlinked",
+        CategoryList:    serviceCategoryList,
+    }, 0)
+    if err != nil {
+        return err
     }
 
     return nil
@@ -282,6 +280,86 @@ func (s Service) validateManufacturer(manufacturer contract.Manufacturer) error 
     }
 
     return nil
+}
+
+func createVsCategoryModelList(categoryList []contract.Category,
+    labelTemplateID string) ([]LabelTemplateVsCategory, error) {
+    vsCategoryModelList := make([]LabelTemplateVsCategory, 0, len(categoryList))
+
+    for _, category := range categoryList {
+        categoryID, err := strconv.ParseInt(category.CategoryID, 10, 64)
+        if err != nil {
+            return nil, err
+        }
+
+        var typeID *int64
+
+        if category.TypeID != nil {
+            typeIDValue, err := strconv.ParseInt(*category.TypeID, 10, 64)
+            if err != nil {
+                return nil, err
+            }
+
+            typeID = &typeIDValue
+        }
+
+        vsCategoryModel := LabelTemplateVsCategory{
+            LabelTemplateID: labelTemplateID,
+            CategoryID:      categoryID,
+            TypeID:          typeID,
+        }
+
+        vsCategoryModelList = append(vsCategoryModelList, vsCategoryModel)
+    }
+
+    return vsCategoryModelList, nil
+}
+
+func mapHistoryCategoryToService(categoryList []contract.Category) ([]HistoryCategory, error) {
+    serviceCategoryList := make([]HistoryCategory, 0, len(categoryList))
+    for _, category := range categoryList {
+        categoryID, err := strconv.ParseInt(category.CategoryID, 10, 64)
+        if err != nil {
+            return nil, err
+        }
+
+        var typeID *int64
+
+        if category.TypeID != nil {
+            typeIDValue, err := strconv.ParseInt(*category.TypeID, 10, 64)
+            if err != nil {
+                return nil, err
+            }
+
+            typeID = &typeIDValue
+        }
+
+        serviceCategoryList = append(serviceCategoryList, HistoryCategory{
+            CategoryID: categoryID,
+            TypeID:     typeID,
+        })
+    }
+
+    return serviceCategoryList, nil
+}
+
+func mapHistoryCategoryToContract(serviceCategoryList []HistoryCategory) []contract.Category {
+    categoryList := make([]contract.Category, 0, len(serviceCategoryList))
+    for _, serviceCategory := range serviceCategoryList {
+        var typeID *string
+
+        if serviceCategory.TypeID != nil {
+            typeIDValue := strconv.FormatInt(*serviceCategory.TypeID, 10)
+            typeID = &typeIDValue
+        }
+
+        categoryList = append(categoryList, contract.Category{
+            CategoryID: strconv.FormatInt(serviceCategory.CategoryID, 10),
+            TypeID:     typeID,
+        })
+    }
+
+    return categoryList
 }
 
 func (s Service) createHistory(ctx context.Context, labelTemplateID string, manufacturer contract.Manufacturer,
