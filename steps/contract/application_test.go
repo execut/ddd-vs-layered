@@ -228,8 +228,55 @@ func TestLabelTemplate_Live(t *testing.T) {
         })
     })
 
+    var (
+        expectedCategory1 = contract.Category{
+            CategoryID: "1",
+        }
+        expectedCategory2 = contract.Category{
+            CategoryID: "2",
+            TypeID:     &expectedCategory2TypeID,
+        }
+    )
+
+    t.Run("11. Привязывать шаблон к списку категорий или категорий+типов", func(t *testing.T) {
+        err = app.AddCategoryList(t.Context(), expectedID, []contract.Category{
+            expectedCategory1,
+            expectedCategory2,
+        })
+
+        require.NoError(t, err)
+
+        t.Run("и получать ошибку при попытке привязать уже существующую категорию", func(t *testing.T) {
+            err = app.AddCategoryList(t.Context(), expectedID, []contract.Category{
+                expectedCategory2,
+            })
+
+            require.Error(t, err)
+            assert.ErrorContains(t, err, "категория уже привязана к шаблону (категория 2, тип 3)")
+        })
+    })
+
+    t.Run("12. Отвязывать шаблон от списка категорий или категорий+типов", func(t *testing.T) {
+        err = app.UnlinkCategoryList(t.Context(), expectedID, []contract.Category{
+            expectedCategory1,
+            expectedCategory2,
+        })
+
+        require.NoError(t, err)
+
+        t.Run("и получать ошибку при попытке отвязать уже отвязанную категорию", func(t *testing.T) {
+            err = app.UnlinkCategoryList(t.Context(), expectedID, []contract.Category{
+                expectedCategory2,
+            })
+
+            require.Error(t, err)
+            assert.ErrorContains(t, err, "категория уже отвязана от шаблона (категория 2, тип 3)")
+        })
+    })
+
     t.Run("10. Чтобы писалась история операций над шаблонами с возможностью"+
-        " выводить все данные в json", func(t *testing.T) {
+        " выводить все данные в json"+
+        "12. Смотреть историю добавления и удаления категорий в шаблоне", func(t *testing.T) {
         result, err := app.HistoryList(t.Context(), expectedID)
 
         require.NoError(t, err)
@@ -268,58 +315,22 @@ func TestLabelTemplate_Live(t *testing.T) {
                 OrderKey: 6,
                 Action:   "deleted",
             },
+            {
+                OrderKey: 7,
+                Action:   "category_list_added",
+                CategoryList: []contract.Category{
+                    expectedCategory1,
+                    expectedCategory2,
+                },
+            },
+            {
+                OrderKey: 8,
+                Action:   "category_list_unlinked",
+                CategoryList: []contract.Category{
+                    expectedCategory1,
+                    expectedCategory2,
+                },
+            },
         }, result)
-    })
-
-    t.Run("11. Привязывать шаблон к списку категорий или категорий+типов", func(t *testing.T) {
-        err = app.AddCategoryList(t.Context(), expectedID, []contract.Category{
-            {
-                CategoryID: "1",
-            },
-            {
-                CategoryID: "2",
-                TypeID:     &expectedCategory2TypeID,
-            },
-        })
-
-        require.NoError(t, err)
-
-        t.Run("и получать ошибку при попытке привязать уже существующую категорию", func(t *testing.T) {
-            err = app.AddCategoryList(t.Context(), expectedID, []contract.Category{
-                {
-                    CategoryID: "2",
-                    TypeID:     &expectedCategory2TypeID,
-                },
-            })
-
-            require.Error(t, err)
-            assert.ErrorContains(t, err, "категория уже привязана к шаблону (категория 2, тип 3)")
-        })
-    })
-
-    t.Run("12. Отвязывать шаблон от списка категорий или категорий+типов", func(t *testing.T) {
-        err = app.UnlinkCategoryList(t.Context(), expectedID, []contract.Category{
-            {
-                CategoryID: "1",
-            },
-            {
-                CategoryID: "2",
-                TypeID:     &expectedCategory2TypeID,
-            },
-        })
-
-        require.NoError(t, err)
-
-        t.Run("и получать ошибку при попытке отвязать уже отвязанную категорию", func(t *testing.T) {
-            err = app.UnlinkCategoryList(t.Context(), expectedID, []contract.Category{
-                {
-                    CategoryID: "2",
-                    TypeID:     &expectedCategory2TypeID,
-                },
-            })
-
-            require.Error(t, err)
-            assert.ErrorContains(t, err, "категория уже отвязана от шаблона (категория 2, тип 3)")
-        })
     })
 }
