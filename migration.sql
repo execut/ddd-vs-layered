@@ -15,6 +15,7 @@ CREATE TABLE label_templates_events (
 CREATE INDEX label_templates_aggregate_id_idx ON label_templates_events (aggregate_id);
 
 CREATE TABLE label_templates_history (
+    id BIGINT primary key,
     label_template_id UUID NOT NULL,
     order_key BIGINT NOT NULL,
     action VARCHAR(255) NOT NULL,
@@ -26,3 +27,11 @@ CREATE TABLE label_templates_history (
 );
 CREATE INDEX label_templates_history_label_template_id_idx ON label_templates_history (label_template_id);
 CREATE INDEX label_templates_history_label_template_id_order_key_idx ON label_templates_history (label_template_id, order_key);
+
+CREATE TABLE label_templates_history_categories (
+    history_id UUID NOT NULL,
+    category_id BIGINT NOT NULL,
+    type_id BIGINT
+);
+
+CREATE INDEX label_templates_history_categories_history_id_idx ON label_templates_history_categories (history_id);
