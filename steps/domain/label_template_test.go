@@ -1,9 +1,10 @@
-package test_test
+package domain_test
 
 import (
     "testing"
 
     "effective-architecture/steps/domain"
+
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/require"
 )
@@ -60,5 +61,18 @@ func TestLabelTemplate_Live(t *testing.T) {
 
         require.NoError(t, err)
         assert.Equal(t, expectedManufacturer, labelTemplate.Manufacturer)
+    })
+
+    t.Run("Привязывать шаблон к списку категорий или категорий+типов", func(t *testing.T) {
+        err := labelTemplate.AddCategoryList([]domain.Category{expectedCategory1, expectedCategory2})
+
+        require.NoError(t, err)
+
+        t.Run("и получать ошибку при попытке привязать уже существующую категорию", func(t *testing.T) {
+            err := labelTemplate.AddCategoryList([]domain.Category{expectedCategory1})
+
+            require.ErrorIs(t, err, domain.ErrCategoryAlreadyAdded)
+            require.ErrorContains(t, err, " (категория 1, тип 2)")
+        })
     })
 }

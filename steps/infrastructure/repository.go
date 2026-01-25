@@ -8,6 +8,7 @@ import (
     "time"
 
     "effective-architecture/steps/domain"
+
     "github.com/jackc/pgx/v5"
 )
 
@@ -21,7 +22,7 @@ func NewRepository(db *EventsRepository) *Repository {
     }
 }
 
-func (r Repository) Load(ctx context.Context, aggregate *domain.LabelTemplate) error {
+func (r Repository) Load(ctx context.Context, aggregate *domain.LabelTemplate) error { //nolint:cyclop
     modelList, err := r.db.Load(ctx, aggregate.ID.UUID)
     if err != nil {
         if errors.Is(err, pgx.ErrNoRows) {
@@ -45,6 +46,11 @@ func (r Repository) Load(ctx context.Context, aggregate *domain.LabelTemplate) e
             }
         case "domain.LabelTemplateUpdatedEvent":
             err = applyEvent[domain.LabelTemplateUpdatedEvent](model, aggregate)
+            if err != nil {
+                return err
+            }
+        case "domain.LabelTemplateCategoryListAddedEvent":
+            err = applyEvent[domain.LabelTemplateCategoryListAddedEvent](model, aggregate)
             if err != nil {
                 return err
             }
@@ -79,6 +85,10 @@ func (r Repository) Save(ctx context.Context, aggregate *domain.LabelTemplate) e
     }
 
     return nil
+}
+
+func (r Repository) Cleanup(ctx context.Context, id domain.LabelTemplateID) error {
+    return r.db.Cleanup(ctx, id.UUID)
 }
 
 func applyEvent[T domain.LabelTemplateEvent](model EventModel, aggregate *domain.LabelTemplate) error {

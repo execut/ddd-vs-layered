@@ -1,9 +1,10 @@
-package test_test
+package domain_test
 
 import (
     "testing"
 
     "effective-architecture/steps/domain"
+
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/require"
 )

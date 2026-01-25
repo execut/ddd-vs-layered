@@ -4,17 +4,17 @@ import (
     "context"
     "fmt"
 
-    "effective-architecture/steps/application"
+    "effective-architecture/steps/contract"
     "github.com/spf13/cobra"
 )
 
-func InitLabelsDeleteTemplate(ctx context.Context, app *application.Application) error {
+func InitLabelsDeleteTemplate(ctx context.Context, app contract.IApplication) error {
     var deleteLabelTemplateCmd = &cobra.Command{
         Use:   "labels-delete-template",
         Short: "",
         Long:  ``,
         RunE: func(_ *cobra.Command, _ []string) error {
-            err := app.DeleteLabelTemplate(ctx, labelTemplateID)
+            err := app.Delete(ctx, labelTemplateID)
             if err != nil {
                 return err
             }

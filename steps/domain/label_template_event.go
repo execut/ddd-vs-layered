@@ -12,3 +12,7 @@ type LabelTemplateUpdatedEvent struct {
 
 type LabelTemplateDeletedEvent struct {
 }
+
+type LabelTemplateCategoryListAddedEvent struct {
+    CategoryList []Category
+}

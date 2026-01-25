@@ -4,27 +4,20 @@ import (
     "context"
     "errors"
     "fmt"
-    "os"
 
     "github.com/google/uuid"
     "github.com/jackc/pgx/v5"
 )
 
 var (
-    ErrCouldNotTruncate = errors.New("could not truncate label template")
-    ErrCouldNotCreate   = errors.New("could not create label template")
+    ErrCouldNotCreate = errors.New("could not create label template")
 )
 
 type EventsRepository struct {
     conn *pgx.Conn
 }
 
-func NewEventsRepository() (*EventsRepository, error) {
-    conn, err := pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
-    if err != nil {
-        return nil, fmt.Errorf("unable to connect to database: %w", err)
-    }
-
+func NewEventsRepository(conn *pgx.Conn) (*EventsRepository, error) {
     return &EventsRepository{
         conn: conn,
     }, nil
@@ -47,13 +40,8 @@ func (r *EventsRepository) Save(ctx context.Context, modelList []EventModel) err
     return nil
 }
 
-func (r *EventsRepository) Truncate(ctx context.Context) error {
-    _, err := r.conn.Exec(ctx, "TRUNCATE label_templates_events")
-    if err != nil {
-        return err
-    }
-
-    _, err = r.conn.Exec(ctx, "TRUNCATE label_templates_history")
+func (r *EventsRepository) Cleanup(ctx context.Context, aggregateID uuid.UUID) error {
+    _, err := r.conn.Exec(ctx, "DELETE FROM label_templates_events WHERE aggregate_id=$1", aggregateID)
     if err != nil {
         return err
     }

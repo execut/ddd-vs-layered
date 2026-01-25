@@ -4,31 +4,24 @@ import (
     "context"
     "errors"
     "fmt"
-    "os"
     "strconv"
     "time"
 
     "effective-architecture/steps/domain"
     "effective-architecture/steps/domain/history"
+
     "github.com/jackc/pgx/v5"
 )
 
 var (
-    ErrCouldNotTruncate = errors.New("could not truncate label template")
-    ErrCouldNotDelete   = errors.New("could not delete label template")
-    ErrCouldNotCreate   = errors.New("could not create label template")
+    ErrCouldNotCreate = errors.New("could not create label template")
 )
 
 type Repository struct {
     conn *pgx.Conn
 }
 
-func NewRepository() (*Repository, error) {
-    conn, err := pgx.Connect(context.Background(), os.Getenv("DATABASE_URL"))
-    if err != nil {
-        return nil, fmt.Errorf("unable to connect to database: %w", err)
-    }
-
+func NewRepository(conn *pgx.Conn) (*Repository, error) {
     return &Repository{
         conn: conn,
     }, nil
@@ -108,6 +101,15 @@ func (r Repository) List(ctx context.Context, aggregateID domain.LabelTemplateID
     }
 
     return result, nil
+}
+
+func (r Repository) Cleanup(ctx context.Context, id domain.LabelTemplateID) error {
+    _, err := r.conn.Exec(ctx, "DELETE FROM label_templates_history WHERE label_template_id=$1", id.UUID)
+    if err != nil {
+        return err
+    }
+
+    return nil
 }
 
 func mapHistoryToDomain(historyModel History, aggregateID domain.LabelTemplateID) (history.History, error) {

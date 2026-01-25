@@ -3,9 +3,8 @@ package commands
 import (
     "context"
 
-    "effective-architecture/steps/application"
-    "effective-architecture/steps/infrastructure"
-    "effective-architecture/steps/infrastructure/history"
+    "effective-architecture/steps/contract"
+    "effective-architecture/steps/presentation"
     "github.com/spf13/cobra"
 )
 
@@ -20,49 +19,29 @@ var (
     organizationAddress string
     site                string
     email               string
+    initiators          = []func(ctx context.Context, app contract.IApplication) error{
+        InitLabelsCreateTemplate,
+        InitLabelsDeleteTemplate,
+        InitLabelsGetTemplate,
+        InitLabelsTemplateAddCategoryList,
+        InitLabelsTemplateHistory,
+        InitLabelsUpdateTemplate,
+    }
 )
 
 func Execute() error {
     ctx := context.Background()
 
-    repository, err := infrastructure.NewEventsRepository()
+    app, err := presentation.NewApplication(ctx)
     if err != nil {
         panic(err)
     }
 
-    historyRepository, err := history.NewRepository()
-    if err != nil {
-        panic(err)
-    }
-
-    app, err := application.NewApplication(repository, historyRepository)
-    if err != nil {
-        panic(err)
-    }
-
-    err = InitLabelsCreateTemplate(ctx, app)
-    if err != nil {
-        return err
-    }
-
-    err = InitLabelsUpdateTemplate(ctx, app)
-    if err != nil {
-        return err
-    }
-
-    err = InitLabelsDeleteTemplate(ctx, app)
-    if err != nil {
-        return err
-    }
-
-    err = InitLabelsGetTemplate(ctx, app)
-    if err != nil {
-        return err
-    }
-
-    err = InitLabelsTemplateHistory(ctx, app)
-    if err != nil {
-        return err
+    for _, initiator := range initiators {
+        err := initiator(ctx, app)
+        if err != nil {
+            return err
+        }
     }
 
     rootCmd.PersistentFlags().StringVarP(&labelTemplateID, "id", "i", "", "id")
