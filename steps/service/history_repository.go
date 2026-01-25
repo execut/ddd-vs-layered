@@ -86,7 +86,7 @@ func (r HistoryRepository) FindAll(ctx context.Context, labelTemplateID string) 
 }
 
 func (r HistoryRepository) Delete(ctx context.Context, labelTemplateID string) error {
-    sql := `DELETE label_templates_history WHERE label_template_id = $1`
+    sql := `DELETE FROM label_templates_history WHERE label_template_id = $1`
 
     result, err := r.conn.Exec(ctx, sql, labelTemplateID)
     if err != nil {
@@ -94,7 +94,7 @@ func (r HistoryRepository) Delete(ctx context.Context, labelTemplateID string) e
     }
 
     if result.RowsAffected() == 0 {
-        return ErrCouldNotTruncate
+        return ErrCouldNotDelete
     }
 
     return nil

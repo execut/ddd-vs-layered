@@ -5,6 +5,7 @@ import (
     "errors"
     "net/mail"
     "net/url"
+    "strconv"
     "strings"
 
     "effective-architecture/steps/contract"
@@ -38,14 +39,17 @@ type IHistoryRepository interface {
 }
 
 type Service struct {
-    repository        IRepository
-    historyRepository IHistoryRepository
+    repository           IRepository
+    historyRepository    IHistoryRepository
+    vsCategoryRepository *VsCategoryRepository
 }
 
-func NewService(repository IRepository, historyRepository IHistoryRepository) *Service {
+func NewService(repository IRepository, historyRepository IHistoryRepository,
+    categoryRepository *VsCategoryRepository) *Service {
     return &Service{
-        repository:        repository,
-        historyRepository: historyRepository,
+        repository:           repository,
+        historyRepository:    historyRepository,
+        vsCategoryRepository: categoryRepository,
     }
 }
 
@@ -175,9 +179,32 @@ func (s Service) HistoryList(ctx context.Context, labelTemplateID string) ([]con
 }
 
 func (s Service) AddCategoryList(ctx context.Context, labelTemplateID string, categoryList []contract.Category) error {
-    _ = ctx
-    _ = labelTemplateID
-    _ = categoryList
+    for _, category := range categoryList {
+        categoryID, err := strconv.ParseInt(category.CategoryID, 10, 64)
+        if err != nil {
+            return err
+        }
+
+        var typeID *int64
+
+        if category.TypeID != nil {
+            typeIDValue, err := strconv.ParseInt(*category.TypeID, 10, 64)
+            if err != nil {
+                return err
+            }
+
+            typeID = &typeIDValue
+        }
+
+        err = s.vsCategoryRepository.Create(ctx, LabelTemplateVsCategory{
+            LabelTemplateID: labelTemplateID,
+            CategoryID:      categoryID,
+            TypeID:          typeID,
+        })
+        if err != nil {
+            return err
+        }
+    }
 
     return nil
 }
@@ -185,6 +212,7 @@ func (s Service) AddCategoryList(ctx context.Context, labelTemplateID string, ca
 func (s Service) Cleanup(ctx context.Context, labelTemplateID string) error {
     _ = s.repository.Delete(ctx, labelTemplateID)
     _ = s.historyRepository.Delete(ctx, labelTemplateID)
+    _ = s.vsCategoryRepository.Delete(ctx, labelTemplateID)
 
     return nil
 }

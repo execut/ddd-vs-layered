@@ -26,3 +26,9 @@ type LabelTemplateHistoryResult struct {
     NewManufacturerEmail               string `json:"newManufacturerEmail,omitempty"`
     NewManufacturerSite                string `json:"newManufacturerSite,omitempty"`
 }
+
+type LabelTemplateVsCategory struct {
+    LabelTemplateID string
+    CategoryID      int64
+    TypeID          *int64
+}
