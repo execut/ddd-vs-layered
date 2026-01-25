@@ -141,8 +141,7 @@ func (a *Application) HistoryList(ctx context.Context, id string) ([]contract.La
         return nil, err
     }
 
-    result := []contract.LabelTemplateHistoryRow{}
-
+    result := make([]contract.LabelTemplateHistoryRow, 0, len(domainHistoryList))
     for _, domainHistory := range domainHistoryList {
         historyRow := contract.LabelTemplateHistoryRow{
             OrderKey: domainHistory.OrderKey,
@@ -165,10 +164,34 @@ func (a *Application) HistoryList(ctx context.Context, id string) ([]contract.La
             historyRow.NewManufacturerSite = domainHistory.NewManufacturerSite.Value
         }
 
+        categoryList := make([]contract.Category, 0, len(domainHistory.CategoryList))
+        for _, domainCategory := range domainHistory.CategoryList {
+            category := mapDomainCategoryToContract(domainCategory)
+            categoryList = append(categoryList, category)
+        }
+
+        if len(categoryList) > 0 {
+            historyRow.CategoryList = categoryList
+        }
+
         result = append(result, historyRow)
     }
 
     return result, nil
+}
+
+func mapDomainCategoryToContract(category domain.Category) contract.Category {
+    var typeID *string
+
+    if category.TypeID != nil {
+        typeIDValue := strconv.FormatInt(*category.TypeID, 10)
+        typeID = &typeIDValue
+    }
+
+    return contract.Category{
+        CategoryID: strconv.FormatInt(category.CategoryID, 10),
+        TypeID:     typeID,
+    }
 }
 
 func (a *Application) AddCategoryList(ctx context.Context, labelTemplateID string,
@@ -189,6 +212,11 @@ func (a *Application) AddCategoryList(ctx context.Context, labelTemplateID strin
     }
 
     err = a.repository.Save(ctx, domainLabel)
+    if err != nil {
+        return err
+    }
+
+    err = a.dispatcher.Dispatch(ctx, domainLabel)
     if err != nil {
         return err
     }
@@ -214,6 +242,11 @@ func (a *Application) UnlinkCategoryList(ctx context.Context, labelTemplateID st
     }
 
     err = a.repository.Save(ctx, domainLabel)
+    if err != nil {
+        return err
+    }
+
+    err = a.dispatcher.Dispatch(ctx, domainLabel)
     if err != nil {
         return err
     }
