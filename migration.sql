@@ -15,7 +15,7 @@ CREATE TABLE label_templates_events (
 CREATE INDEX label_templates_aggregate_id_idx ON label_templates_events (aggregate_id);
 
 CREATE TABLE label_templates_history (
-    id BIGINT primary key,
+    id UUID NOT NULL,
     label_template_id UUID NOT NULL,
     order_key BIGINT NOT NULL,
     action VARCHAR(255) NOT NULL,
