@@ -54,6 +54,11 @@ func (r Repository) Load(ctx context.Context, aggregate *domain.LabelTemplate) e
             if err != nil {
                 return err
             }
+        case "domain.LabelTemplateCategoryListUnlinkedEvent":
+            err = applyEvent[domain.LabelTemplateCategoryListUnlinkedEvent](model, aggregate)
+            if err != nil {
+                return err
+            }
         }
     }
 
