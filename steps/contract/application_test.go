@@ -6,6 +6,7 @@ import (
 
     "effective-architecture/steps/contract"
     "effective-architecture/steps/presentation"
+
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/require"
 )
@@ -290,8 +291,6 @@ func TestLabelTemplate_Live(t *testing.T) {
                     TypeID:     &expectedCategory2TypeID,
                 },
             })
-
-            require.NoError(t, err)
 
             require.Error(t, err)
             assert.ErrorContains(t, err, "категория уже привязана к шаблону (категория 2, тип 3)")
