@@ -26,3 +26,13 @@ CREATE TABLE label_templates_history (
 );
 CREATE INDEX label_templates_history_label_template_id_idx ON label_templates_history (label_template_id);
 CREATE INDEX label_templates_history_label_template_id_order_key_idx ON label_templates_history (label_template_id, order_key);
+
+-- migrations for layered
+
+CREATE TABLE label_template_vs_categories (
+    label_template_id UUID NOT NULL,
+    category_id BIGINT NOT NULL,
+    type_id BIGINT
+);
+
+CREATE UNIQUE INDEX label_template_vs_categories_id_pk ON label_template_vs_categories (label_template_id, category_id, type_id);
