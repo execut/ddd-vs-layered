@@ -1,4 +1,4 @@
-package labels
+package service
 
 import (
     "context"
@@ -85,16 +85,16 @@ func (r HistoryRepository) FindAll(ctx context.Context, labelTemplateID string) 
     return modelList, nil
 }
 
-func (r HistoryRepository) Truncate(ctx context.Context) error {
-    sql := `TRUNCATE label_templates_history`
+func (r HistoryRepository) Delete(ctx context.Context, labelTemplateID string) error {
+    sql := `DELETE FROM label_templates_history WHERE label_template_id = $1`
 
-    result, err := r.conn.Exec(ctx, sql)
+    result, err := r.conn.Exec(ctx, sql, labelTemplateID)
     if err != nil {
         return err
     }
 
     if result.RowsAffected() == 0 {
-        return ErrCouldNotTruncate
+        return ErrCouldNotDelete
     }
 
     return nil

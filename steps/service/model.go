@@ -1,4 +1,4 @@
-package labels
+package service
 
 type LabelTemplate struct {
     ID                              string
@@ -25,4 +25,10 @@ type LabelTemplateHistoryResult struct {
     NewManufacturerOrganizationAddress string `json:"newManufacturerOrganizationAddress,omitempty"`
     NewManufacturerEmail               string `json:"newManufacturerEmail,omitempty"`
     NewManufacturerSite                string `json:"newManufacturerSite,omitempty"`
+}
+
+type LabelTemplateVsCategory struct {
+    LabelTemplateID string
+    CategoryID      int64
+    TypeID          *int64
 }

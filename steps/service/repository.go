@@ -1,4 +1,4 @@
-package labels
+package service
 
 import (
     "context"
@@ -9,8 +9,7 @@ import (
 )
 
 var (
-    ErrCouldNotTruncate = errors.New("could not truncate label template")
-    ErrCouldNotCreate   = errors.New("could not create label template")
+    ErrCouldNotCreate = errors.New("could not create label template")
     ErrCouldNotDelete   = errors.New("could not delete label template")
     ErrCouldNotUpdate   = errors.New("could not update label template")
 )
@@ -110,7 +109,7 @@ func (r Repository) Truncate(ctx context.Context) error {
     }
 
     if result.RowsAffected() == 0 {
-        return ErrCouldNotTruncate
+        return ErrCouldNotDelete
     }
 
     return nil

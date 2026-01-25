@@ -8,41 +8,41 @@ import (
     "github.com/stretchr/testify/require"
 )
 
-func TestLabelLive(t *testing.T) {
+func TestLabelTemplateLive(t *testing.T) {
     t.Parallel()
-    t.Run("Создавать шаблон этикетки товара с UUID и Наименованием организации производителя", func(t *testing.T) {
+    t.Run("1. Создавать шаблон этикетки товара с UUID и Наименованием организации производителя", func(t *testing.T) {
         output, err := runBinary([]string{
             "labels-create-template",
-            "--id", expectedUUID,
+            "--id", expectedID,
             "--manufacturer-organization-name", expectedManufacturerOrganizationName,
         })
 
         require.NoError(t, err, "output:"+output)
         assert.Equal(t, "1", output)
     })
-    t.Run("Получать данные шаблона в JSON", func(t *testing.T) {
+    t.Run("2. Получать данные шаблона в JSON", func(t *testing.T) {
         output, err := runBinary([]string{
             "labels-get-template",
-            "--id", expectedUUID,
+            "--id", expectedID,
         })
 
         require.NoError(t, err)
         assert.JSONEq(t, `{"id":"123e4567-e89b-12d3-a456-426655440000","manufacturer":{"organizationName":"test manufacturer organization name"}}`, output)
     })
-    t.Run("Чтобы возвращалась уникальная ошибка при попытке создать уже существующий шаблон", func(t *testing.T) {
+    t.Run("4. Чтобы возвращалась уникальная ошибка при попытке создать уже существующий шаблон", func(t *testing.T) {
         out, err := runBinary([]string{
             "labels-create-template",
-            "--id", expectedUUID,
+            "--id", expectedID,
             "--manufacturer-organization-name", expectedManufacturerOrganizationName,
         })
 
         require.Error(t, err)
         assert.Contains(t, out, "попытка создать уже существующий шаблон")
     })
-    t.Run("Обновлять данные шаблона", func(t *testing.T) {
+    t.Run("7. Обновлять данные шаблона", func(t *testing.T) {
         output, err := runBinary([]string{
             "labels-update-template",
-            "--id", expectedUUID,
+            "--id", expectedID,
             "--manufacturer-organization-name", expectedNewManufacturerOrganizationName,
         })
 
@@ -50,7 +50,7 @@ func TestLabelLive(t *testing.T) {
         assert.Equal(t, "1", output)
         output, err = runBinary([]string{
             "labels-get-template",
-            "--id", expectedUUID,
+            "--id", expectedID,
         })
         require.NoError(t, err)
         assert.Contains(t, output, expectedNewManufacturerOrganizationName)
@@ -58,7 +58,7 @@ func TestLabelLive(t *testing.T) {
         t.Run("и не давать это делать при ошибках из предыдущих пунктов", func(t *testing.T) {
             out, err := runBinary([]string{
                 "labels-update-template",
-                "--id", expectedUUID,
+                "--id", expectedID,
                 "--manufacturer-organization-name", "",
             })
 
@@ -66,21 +66,21 @@ func TestLabelLive(t *testing.T) {
             assert.Contains(t, out, "название организации производителя должно быть до 255 символов в длину")
         })
     })
-    t.Run("Удалять шаблон этикетки товара по UUID", func(t *testing.T) {
+    t.Run("3. Удалять шаблон этикетки товара по UUID", func(t *testing.T) {
         output, err := runBinary([]string{
             "labels-delete-template",
-            "--id", expectedUUID,
+            "--id", expectedID,
         })
 
         require.NoError(t, err)
         assert.Equal(t, `1`, output)
     })
 
-    t.Run("Указывать и получать поля Адрес, Email, сайт", func(t *testing.T) {
+    t.Run("8. Указывать и получать поля Адрес, Email, сайт", func(t *testing.T) {
         t.Run("при создании", func(t *testing.T) {
             output, err := runBinary([]string{
                 "labels-create-template",
-                "--id", expectedUUID,
+                "--id", expectedID,
                 "--manufacturer-organization-name", expectedManufacturerOrganizationName,
                 "--manufacturer-organization-address", expectedManufacturerOrganizationAddress,
                 "--manufacturer-email", expectedManufacturerEmail,
@@ -91,7 +91,7 @@ func TestLabelLive(t *testing.T) {
             assert.Equal(t, "1", output)
             output, err = runBinary([]string{
                 "labels-get-template",
-                "--id", expectedUUID,
+                "--id", expectedID,
             })
 
             require.NoError(t, err)
@@ -109,7 +109,7 @@ func TestLabelLive(t *testing.T) {
         t.Run("и обновлении", func(t *testing.T) {
             output, err := runBinary([]string{
                 "labels-update-template",
-                "--id", expectedUUID,
+                "--id", expectedID,
                 "--manufacturer-organization-name", expectedNewManufacturerOrganizationName,
                 "--manufacturer-organization-address", expectedNewManufacturerOrganizationAddress,
                 "--manufacturer-email", expectedNewManufacturerEmail,
@@ -120,7 +120,7 @@ func TestLabelLive(t *testing.T) {
             assert.Equal(t, "1", output)
             output, err = runBinary([]string{
                 "labels-get-template",
-                "--id", expectedUUID,
+                "--id", expectedID,
             })
             require.NoError(t, err)
             assert.Contains(t, output, expectedNewManufacturerOrganizationAddress)
@@ -128,26 +128,26 @@ func TestLabelLive(t *testing.T) {
             assert.Contains(t, output, expectedNewManufacturerSite)
         })
     })
-    t.Run("Чтобы возвращалась уникальная ошибка при попытке удалить уже удалённый шаблон", func(t *testing.T) {
+    t.Run("5. Чтобы возвращалась уникальная ошибка при попытке удалить уже удалённый шаблон", func(t *testing.T) {
         _, err := runBinary([]string{
             "labels-delete-template",
-            "--id", expectedUUID,
+            "--id", expectedID,
         })
         require.NoError(t, err)
 
         out, err := runBinary([]string{
             "labels-delete-template",
-            "--id", expectedUUID,
+            "--id", expectedID,
         })
 
         require.Error(t, err)
         assert.Contains(t, out, "попытка удалить уже удалённый шаблон")
     })
-    t.Run("Чтобы возвращалась уникальная ошибка при попытке создать шаблон, если длина Наименования организации производителя", func(t *testing.T) {
+    t.Run("6. Чтобы возвращалась уникальная ошибка при попытке создать шаблон, если длина Наименования организации производителя", func(t *testing.T) {
         t.Run("> 255", func(t *testing.T) {
             out, err := runBinary([]string{
                 "labels-create-template",
-                "--id", expectedUUID,
+                "--id", expectedID,
                 "--manufacturer-organization-name", strings.Repeat("a", 256),
             })
 
@@ -157,7 +157,7 @@ func TestLabelLive(t *testing.T) {
         t.Run("или =0", func(t *testing.T) {
             out, err := runBinary([]string{
                 "labels-create-template",
-                "--id", expectedUUID,
+                "--id", expectedID,
                 "--manufacturer-organization-name", "",
             })
 
@@ -166,7 +166,7 @@ func TestLabelLive(t *testing.T) {
         })
     })
 
-    t.Run("При создании шаблона возвращать ошибку с понятным описанием", func(t *testing.T) {
+    t.Run("9. При создании шаблона возвращать ошибку с понятным описанием", func(t *testing.T) {
         type args struct {
             fieldName           string
             organizationAddress string
@@ -201,7 +201,7 @@ func TestLabelLive(t *testing.T) {
             for _, tt := range tests {
                 out, err := runBinary([]string{
                     "labels-create-template",
-                    "--id", expectedUUID,
+                    "--id", expectedID,
                     "--manufacturer-organization-name", expectedManufacturerOrganizationName,
                     "--manufacturer-organization-address", tt.organizationAddress,
                     "--manufacturer-email", tt.email,
@@ -233,7 +233,7 @@ func TestLabelLive(t *testing.T) {
             for _, tt := range tests {
                 out, err := runBinary([]string{
                     "labels-create-template",
-                    "--id", expectedUUID,
+                    "--id", expectedID,
                     "--manufacturer-organization-name", expectedManufacturerOrganizationName,
                     "--manufacturer-organization-address", tt.organizationAddress,
                     "--manufacturer-email", tt.email,
@@ -246,10 +246,10 @@ func TestLabelLive(t *testing.T) {
         })
     })
 
-    t.Run("Чтобы писалась история операций над шаблонами с возможностью выводить все данные в json", func(t *testing.T) {
+    t.Run("10. Чтобы писалась история операций над шаблонами с возможностью выводить все данные в json", func(t *testing.T) {
         out, err := runBinary([]string{
             "labels-template-history",
-            "--id", expectedUUID,
+            "--id", expectedID,
         })
 
         require.NoError(t, err)
@@ -289,5 +289,27 @@ func TestLabelLive(t *testing.T) {
     "action": "deleted"
 }]
 `, out)
+    })
+
+    t.Run("11. Привязывать шаблон к списку категорий или категорий+типов", func(t *testing.T) {
+        out, err := runBinary([]string{
+            "labels-template-add-category-list",
+            "--id", expectedID,
+            "--category-id-list", "1,2-3",
+        })
+
+        require.NoError(t, err)
+        assert.Equal(t, `1`, out)
+
+        t.Run("и получать ошибку при попытке привязать уже существующую категорию", func(t *testing.T) {
+            out, err := runBinary([]string{
+                "labels-template-add-category-list",
+                "--id", expectedID,
+                "--category-id-list", "2-3",
+            })
+
+            require.Error(t, err)
+            assert.Contains(t, out, "категория уже привязана к шаблону (категория 2, тип 3)")
+        })
     })
 }

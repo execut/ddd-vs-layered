@@ -9,8 +9,6 @@ import (
     "testing"
 )
 
-//var binaryName = "scenario_of_transaction"
-
 var currentPath = ""
 
 func TestMain(m *testing.M) {

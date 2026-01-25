@@ -1,15 +1,19 @@
-package labels
+package service
 
 import (
     "context"
-    "encoding/json"
     "errors"
     "net/mail"
     "net/url"
+    "strconv"
     "strings"
+
+    "effective-architecture/steps/contract"
 )
 
 var (
+    _ contract.IApplication = (*Service)(nil)
+
     ErrLabelTemplateAlreadyCreated                    = errors.New("попытка создать уже существующий шаблон")
     ErrLabelTemplateAlreadyDeleted                    = errors.New("попытка удалить уже удалённый шаблон")
     ErrLabelTemplateWrongManufacturerOrganizationName = errors.New("название организации производителя должно " +
@@ -25,30 +29,32 @@ type IRepository interface {
     Insert(ctx context.Context, model LabelTemplate) error
     Find(ctx context.Context, id string) (LabelTemplate, error)
     Update(ctx context.Context, model LabelTemplate) error
-    Truncate(ctx context.Context) error
     Delete(ctx context.Context, id string) error
 }
 
 type IHistoryRepository interface {
     Create(ctx context.Context, model LabelTemplateHistory, orderKey int) error
     FindAll(ctx context.Context, labelTemplateID string) ([]LabelTemplateHistoryResult, error)
-    Truncate(ctx context.Context) error
+    Delete(ctx context.Context, labelTemplateID string) error
 }
 
 type Service struct {
-    repository        IRepository
-    historyRepository IHistoryRepository
+    repository           IRepository
+    historyRepository    IHistoryRepository
+    vsCategoryRepository *VsCategoryRepository
 }
 
-func NewService(repository IRepository, historyRepository IHistoryRepository) *Service {
+func NewService(repository IRepository, historyRepository IHistoryRepository,
+    categoryRepository *VsCategoryRepository) *Service {
     return &Service{
-        repository:        repository,
-        historyRepository: historyRepository,
+        repository:           repository,
+        historyRepository:    historyRepository,
+        vsCategoryRepository: categoryRepository,
     }
 }
 
-func (s Service) CreateLabelTemplate(ctx context.Context, labelTemplateID string,
-    manufacturer Manufacturer) error {
+func (s Service) Create(ctx context.Context, labelTemplateID string,
+    manufacturer contract.Manufacturer) error {
     model := LabelTemplate{
         ID:                              labelTemplateID,
         ManufacturerOrganizationName:    manufacturer.OrganizationName,
@@ -81,8 +87,8 @@ func (s Service) CreateLabelTemplate(ctx context.Context, labelTemplateID string
     return nil
 }
 
-func (s Service) UpdateLabelTemplate(ctx context.Context, labelTemplateID string,
-    manufacturer Manufacturer) error {
+func (s Service) Update(ctx context.Context, labelTemplateID string,
+    manufacturer contract.Manufacturer) error {
     model := LabelTemplate{
         ID:                              labelTemplateID,
         ManufacturerOrganizationName:    manufacturer.OrganizationName,
@@ -111,15 +117,15 @@ func (s Service) UpdateLabelTemplate(ctx context.Context, labelTemplateID string
     return nil
 }
 
-func (s Service) GetLabelTemplate(ctx context.Context, labelTemplateID string) (string, error) {
+func (s Service) Get(ctx context.Context, labelTemplateID string) (contract.LabelTemplate, error) {
     model, err := s.repository.Find(ctx, labelTemplateID)
     if err != nil {
-        return "", err
+        return contract.LabelTemplate{}, err
     }
 
-    response := GetLabelTemplateResponse{
+    response := contract.LabelTemplate{
         ID: labelTemplateID,
-        Manufacturer: Manufacturer{
+        Manufacturer: contract.Manufacturer{
             OrganizationName:    model.ManufacturerOrganizationName,
             OrganizationAddress: model.ManufacturerOrganizationAddress,
             Email:               model.ManufacturerEmail,
@@ -127,15 +133,10 @@ func (s Service) GetLabelTemplate(ctx context.Context, labelTemplateID string) (
         },
     }
 
-    resultMarshaled, err := json.Marshal(response)
-    if err != nil {
-        return "", err
-    }
-
-    return string(resultMarshaled), nil
+    return response, nil
 }
 
-func (s Service) DeleteLabelTemplate(ctx context.Context, labelTemplateID string) error {
+func (s Service) Delete(ctx context.Context, labelTemplateID string) error {
     err := s.repository.Delete(ctx, labelTemplateID)
     if err != nil {
         if errors.Is(err, ErrCouldNotDelete) {
@@ -156,21 +157,67 @@ func (s Service) DeleteLabelTemplate(ctx context.Context, labelTemplateID string
     return nil
 }
 
-func (s Service) GetLabelHistory(ctx context.Context, labelTemplateID string) (string, error) {
+func (s Service) HistoryList(ctx context.Context, labelTemplateID string) ([]contract.LabelTemplateHistoryRow, error) {
     historyList, err := s.historyRepository.FindAll(ctx, labelTemplateID)
     if err != nil {
-        return "", err
+        return nil, err
     }
 
-    result, err := json.Marshal(historyList)
-    if err != nil {
-        return "", err
+    result := make([]contract.LabelTemplateHistoryRow, 0, len(historyList))
+    for _, history := range historyList {
+        result = append(result, contract.LabelTemplateHistoryRow{
+            OrderKey:                           history.OrderKey,
+            Action:                             history.Action,
+            NewManufacturerOrganizationName:    history.NewManufacturerOrganizationName,
+            NewManufacturerOrganizationAddress: history.NewManufacturerOrganizationAddress,
+            NewManufacturerEmail:               history.NewManufacturerEmail,
+            NewManufacturerSite:                history.NewManufacturerSite,
+        })
     }
 
-    return string(result), nil
+    return result, nil
 }
 
-func (s Service) validateManufacturer(manufacturer Manufacturer) error {
+func (s Service) AddCategoryList(ctx context.Context, labelTemplateID string, categoryList []contract.Category) error {
+    for _, category := range categoryList {
+        categoryID, err := strconv.ParseInt(category.CategoryID, 10, 64)
+        if err != nil {
+            return err
+        }
+
+        var typeID *int64
+
+        if category.TypeID != nil {
+            typeIDValue, err := strconv.ParseInt(*category.TypeID, 10, 64)
+            if err != nil {
+                return err
+            }
+
+            typeID = &typeIDValue
+        }
+
+        err = s.vsCategoryRepository.Create(ctx, LabelTemplateVsCategory{
+            LabelTemplateID: labelTemplateID,
+            CategoryID:      categoryID,
+            TypeID:          typeID,
+        })
+        if err != nil {
+            return err
+        }
+    }
+
+    return nil
+}
+
+func (s Service) Cleanup(ctx context.Context, labelTemplateID string) error {
+    _ = s.repository.Delete(ctx, labelTemplateID)
+    _ = s.historyRepository.Delete(ctx, labelTemplateID)
+    _ = s.vsCategoryRepository.Delete(ctx, labelTemplateID)
+
+    return nil
+}
+
+func (s Service) validateManufacturer(manufacturer contract.Manufacturer) error {
     const varcharLimit = 255
     if len(manufacturer.OrganizationName) > varcharLimit || len(manufacturer.OrganizationName) == 0 {
         return ErrLabelTemplateWrongManufacturerOrganizationName
@@ -205,7 +252,7 @@ func (s Service) validateManufacturer(manufacturer Manufacturer) error {
     return nil
 }
 
-func (s Service) createHistory(ctx context.Context, labelTemplateID string, manufacturer Manufacturer,
+func (s Service) createHistory(ctx context.Context, labelTemplateID string, manufacturer contract.Manufacturer,
     action string) error {
     err := s.historyRepository.Create(ctx, LabelTemplateHistory{
         LabelTemplateID:                    labelTemplateID,
