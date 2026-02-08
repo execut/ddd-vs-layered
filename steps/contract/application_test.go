@@ -367,11 +367,11 @@ func TestLabelTemplate_Live(t *testing.T) {
         require.NoError(t, err)
 
         t.Run("и получать ошибку, если SKU отсутствует", func(t *testing.T) {
-            externalOzonMock.EXPECT().Product(gomock.Any(), gomock.Any()).Return(nil, nil)
+            externalOzonMock.EXPECT().Product(gomock.Any(), gomock.Any()).Return(external.ErrSkuNotFound, nil)
 
             err = app.StartLabelGeneration(t.Context(), expectedLabelGenerationID, expectedSKU)
 
-            require.ErrorContains(t, err, "для SKU ")
+            require.ErrorContains(t, err, "sku не найден")
         })
 
         t.Run("или для категории SKU нет шаблона", func(t *testing.T) {
@@ -386,7 +386,7 @@ func TestLabelTemplate_Live(t *testing.T) {
 
             err = app.StartLabelGeneration(t.Context(), expectedLabelGenerationID, expectedSKU)
 
-            require.ErrorContains(t, err, "шаблон этикетки для переданного SKU не найден")
+            require.ErrorContains(t, err, "шаблон этикетки для SKU не найден")
         })
 
         t.Run("или такая генерация уже была запущена", func(t *testing.T) {
