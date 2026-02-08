@@ -8,17 +8,23 @@ import (
     "time"
 
     "effective-architecture/steps/domain"
+    "effective-architecture/steps/infrastructure/index/category"
 
     "github.com/jackc/pgx/v5"
 )
 
+var _ domain.IRepository = (*Repository)(nil)
+
 type Repository struct {
-    db *EventsRepository
+    db                           *EventsRepository
+    categoryVsTemplateRepository *category.Repository
 }
 
-func NewRepository(db *EventsRepository) *Repository {
+func NewRepository(db *EventsRepository,
+    categoryVsTemplateRepository *category.Repository) *Repository {
     return &Repository{
-        db: db,
+        db:                           db,
+        categoryVsTemplateRepository: categoryVsTemplateRepository,
     }
 }
 
@@ -92,8 +98,50 @@ func (r Repository) Save(ctx context.Context, aggregate *domain.LabelTemplate) e
     return nil
 }
 
-func (r Repository) Cleanup(ctx context.Context, id domain.LabelTemplateID) error {
-    return r.db.Cleanup(ctx, id.UUID)
+func (r Repository) LoadByCategoryList(ctx context.Context,
+    categoryList []domain.Category) (*domain.LabelTemplate, error) {
+    for _, cat := range categoryList {
+        aggregateID, err := r.categoryVsTemplateRepository.AggregateIDByCategory(ctx, cat)
+        if err != nil {
+            if errors.Is(err, category.ErrNotFound) {
+                continue
+            }
+
+            return nil, err
+        }
+
+        if aggregateID == nil {
+            continue
+        }
+
+        domainAggregateID, err := domain.NewLabelTemplateID(*aggregateID)
+        if err != nil {
+            return nil, err
+        }
+
+        aggregate, err := domain.NewLabelTemplate(domainAggregateID)
+        if err != nil {
+            return nil, err
+        }
+
+        err = r.Load(ctx, aggregate)
+        if err != nil {
+            return nil, err
+        }
+
+        return aggregate, nil
+    }
+
+    return nil, domain.ErrLabelTemplateForCategoryNotFound
+}
+
+func (r Repository) Cleanup(ctx context.Context, labelTemplateID domain.LabelTemplateID) error {
+    err := r.categoryVsTemplateRepository.Cleanup(ctx, labelTemplateID)
+    if err != nil {
+        return err
+    }
+
+    return r.db.Cleanup(ctx, labelTemplateID.UUID)
 }
 
 func applyEvent[T domain.LabelTemplateEvent](model EventModel, aggregate *domain.LabelTemplate) error {

@@ -5,6 +5,8 @@ import (
 
     "effective-architecture/steps/contract"
     "effective-architecture/steps/presentation"
+    "effective-architecture/steps/presentation/external"
+
     "github.com/spf13/cobra"
 )
 
@@ -32,7 +34,7 @@ var (
 func Execute() error {
     ctx := context.Background()
 
-    app, err := presentation.NewApplication(ctx)
+    app, err := presentation.NewApplication(ctx, external.NewServiceOzon())
     if err != nil {
         panic(err)
     }

@@ -18,18 +18,22 @@ type Application struct {
     repository        domain.IRepository
     dispatcher        *domain.Dispatcher
     historyRepository history.IRepository
+    labelRepository   domain.ILabelRepository
+    ozonService       domain.IServiceOzon
 }
 
 func NewApplication(repository domain.IRepository,
-    historyRepository history.IRepository) (*Application, error) {
-    dispatcher := domain.NewDispatcher([]domain.Subscriber{
-        history.NewSubscriber(historyRepository),
-    })
+    historyRepository history.IRepository, subscriberList []domain.Subscriber, labelRepository domain.ILabelRepository,
+    ozonService domain.IServiceOzon) (*Application, error) {
+    subscriberList = append(subscriberList, history.NewSubscriber(historyRepository))
+    dispatcher := domain.NewDispatcher(subscriberList)
 
     return &Application{
         repository:        repository,
         historyRepository: historyRepository,
         dispatcher:        dispatcher,
+        labelRepository:   labelRepository,
+        ozonService:       ozonService,
     }, nil
 }
 
@@ -247,6 +251,32 @@ func (a *Application) UnlinkCategoryList(ctx context.Context, labelTemplateID st
     }
 
     err = a.dispatcher.Dispatch(ctx, domainLabel)
+    if err != nil {
+        return err
+    }
+
+    return nil
+}
+
+func (a *Application) StartLabelGeneration(ctx context.Context, id string, sku int64) error {
+    labelID, err := domain.NewLabelID(id)
+    if err != nil {
+        return err
+    }
+
+    label := domain.NewLabel(labelID, a.ozonService, a.repository)
+
+    err = a.labelRepository.Load(ctx, label)
+    if err != nil {
+        return err
+    }
+
+    err = label.StartGeneration(ctx, sku)
+    if err != nil {
+        return err
+    }
+
+    err = a.labelRepository.Save(ctx, label)
     if err != nil {
         return err
     }
