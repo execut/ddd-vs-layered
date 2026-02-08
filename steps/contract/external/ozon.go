@@ -7,7 +7,7 @@ import (
 )
 
 var (
-    ErrSkuNotFound = errors.New("sku not found")
+    ErrSkuNotFound = errors.New("sku не найден")
 )
 
 type IExternalServiceOzon interface {

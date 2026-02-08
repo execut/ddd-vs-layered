@@ -12,7 +12,6 @@ type IApplication interface {
     HistoryList(ctx context.Context, labelTemplateID string) ([]LabelTemplateHistoryRow, error)
     AddCategoryList(ctx context.Context, labelTemplateID string, categoryList []Category) error
     Cleanup(ctx context.Context, labelTemplateID string) error
-    IDByCategoryWithType(ctx context.Context, categoryWithType CategoryWithType) (string, error)
 
     StartLabelGeneration(ctx context.Context, labelTemplateID string, sku int64) error
 }
