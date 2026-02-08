@@ -80,3 +80,18 @@ func (a *Application) Cleanup(ctx context.Context, labelTemplateID string) error
 
     return nil
 }
+
+func (a *Application) IDByCategoryWithType(ctx context.Context, categoryWithType contract.CategoryWithType) (string, error) {
+    _ = ctx
+    _ = categoryWithType
+
+    return "", nil
+}
+
+func (a *Application) StartLabelGeneration(ctx context.Context, labelTemplateID string, sku int64) error {
+    _ = ctx
+    _ = labelTemplateID
+    _ = sku
+
+    return nil
+}
