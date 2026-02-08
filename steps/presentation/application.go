@@ -4,6 +4,7 @@ import (
     "context"
 
     "effective-architecture/steps/contract"
+    "effective-architecture/steps/contract/external"
 )
 
 var _ contract.IApplication = (*Application)(nil)
@@ -11,8 +12,10 @@ var _ contract.IApplication = (*Application)(nil)
 type Application struct {
 }
 
-func NewApplication(ctx context.Context) (*Application, error) {
+func NewApplication(ctx context.Context,
+    externalServiceOzon external.IExternalServiceOzon) (*Application, error) {
     _ = ctx
+    _ = externalServiceOzon
 
     return &Application{}, nil
 }
