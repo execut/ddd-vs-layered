@@ -374,7 +374,7 @@ func TestLabelTemplate_Live(t *testing.T) {
             require.ErrorContains(t, err, "для SKU ")
         })
 
-        t.Run("и получать ошибку, если для категории SKU нет шаблона", func(t *testing.T) {
+        t.Run("или для категории SKU нет шаблона", func(t *testing.T) {
             externalOzonMock.EXPECT().Product(gomock.Any(), gomock.Any()).Return(external.Product{
                 Category: external.CategoryWithType{
                     Category: external.Category{
@@ -389,7 +389,7 @@ func TestLabelTemplate_Live(t *testing.T) {
             require.ErrorContains(t, err, "шаблон этикетки для переданного SKU не найден")
         })
 
-        t.Run("или если генерация уже была запущена и ещё не завершена", func(t *testing.T) {
+        t.Run("или такая генерация уже была запущена", func(t *testing.T) {
             err = app.AddCategoryList(t.Context(), expectedTemplateID, []contract.Category{
                 expectedCategory1,
             })
