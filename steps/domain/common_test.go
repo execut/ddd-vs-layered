@@ -9,10 +9,12 @@ const (
     expectedManufacturerOrganizationAddressValue = "test manufacturer organization address"
     expectedManufacturerEmailValue               = "test@test.com"
     expectedManufacturerSiteValue                = "https://test.com"
+    expectedCategoryID1                          = 1
+    expectedCategoryID2                          = 3
 )
 
 var (
-    expectedUUID, _                         = domain.NewLabelTemplateID(expectedUUIDValue)
+    expectedLabelTemplateID, _              = domain.NewLabelTemplateID(expectedUUIDValue)
     expectedManufacturerOrganizationName, _ = domain.NewOrganizationName(
         expectedManufacturerOrganizationNameValue)
     expectedManufacturerOrganizationAddress, _ = domain.NewOrganizationAddress(
@@ -36,6 +38,7 @@ var (
     )
     expectedCategory1TypeIDValue int64 = 2
     expectedCategory2TypeIDValue int64 = 4
-    expectedCategory1, _               = domain.NewCategory(1, &expectedCategory1TypeIDValue)
-    expectedCategory2, _               = domain.NewCategory(3, &expectedCategory2TypeIDValue)
+    expectedCategory1, _               = domain.NewCategory(expectedCategoryID1, &expectedCategory1TypeIDValue)
+    expectedCategory2, _               = domain.NewCategory(expectedCategoryID2, &expectedCategory2TypeIDValue)
+    expectedCategory2WithoutType, _               = domain.NewCategory(expectedCategoryID2, nil)
 )

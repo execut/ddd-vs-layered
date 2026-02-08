@@ -18,10 +18,10 @@ func TestLabelTemplate_Live(t *testing.T) {
     )
 
     t.Run("New", func(t *testing.T) {
-        labelTemplate, err = domain.NewLabelTemplate(expectedUUID)
+        labelTemplate, err = domain.NewLabelTemplate(expectedLabelTemplateID)
 
         require.NoError(t, err)
-        assert.Equal(t, expectedUUID, labelTemplate.ID)
+        assert.Equal(t, expectedLabelTemplateID, labelTemplate.ID)
     })
 
     t.Run("Create", func(t *testing.T) {
