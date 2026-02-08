@@ -1,3 +1,4 @@
+-- Шардировано по id шаблона:
 CREATE TABLE label_templates (
     id UUID PRIMARY KEY,
     manufacturer_organization_name VARCHAR(255) NOT NULL,
@@ -35,3 +36,13 @@ CREATE TABLE label_templates_history_categories (
 );
 
 CREATE INDEX label_templates_history_categories_history_id_idx ON label_templates_history_categories (history_id);
+
+--  шардировано по id генерации
+
+CREATE TABLE label_generation (
+    id UUID PRIMARY KEY,
+    status text not null,
+    label_template_id UUID not null,
+    sku BIGINT not null,
+    created_at timestamp NOT NULL
+);
