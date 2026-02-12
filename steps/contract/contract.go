@@ -1,6 +1,8 @@
 package contract
 
-import "context"
+import (
+    "context"
+)
 
 type IApplication interface {
     Create(ctx context.Context, labelTemplateID string, manufacturer Manufacturer) error
@@ -10,6 +12,8 @@ type IApplication interface {
     HistoryList(ctx context.Context, labelTemplateID string) ([]LabelTemplateHistoryRow, error)
     AddCategoryList(ctx context.Context, labelTemplateID string, categoryList []Category) error
     Cleanup(ctx context.Context, labelTemplateID string) error
+
+    StartLabelGeneration(ctx context.Context, labelTemplateID string, sku int64) error
 }
 
 type LabelTemplateHistoryList struct {
@@ -41,4 +45,9 @@ type Manufacturer struct {
 type Category struct {
     CategoryID string
     TypeID     *string
+}
+
+type CategoryWithType struct {
+    CategoryID string
+    TypeID     string
 }
