@@ -130,15 +130,6 @@ func TestLabelTemplate_Live(t *testing.T) {
             assert.Equal(t, expectedNewManufacturerSite, result.Manufacturer.Site)
         })
     })
-    t.Run("5. Чтобы возвращалась уникальная ошибка при попытке удалить уже удалённый шаблон", func(t *testing.T) {
-        err := app.Delete(t.Context(), expectedTemplateID)
-        require.NoError(t, err)
-
-        err = app.Delete(t.Context(), expectedTemplateID)
-
-        require.Error(t, err)
-        require.ErrorContains(t, err, "попытка удалить уже удалённый шаблон")
-    })
     t.Run("6. Чтобы возвращалась уникальная ошибка при попытке создать шаблон, если длина Наименования "+
         "организации производителя", func(t *testing.T) {
         t.Run("> 255", func(t *testing.T) {
@@ -324,10 +315,6 @@ func TestLabelTemplate_Live(t *testing.T) {
             },
             {
                 OrderKey: 6,
-                Action:   "deleted",
-            },
-            {
-                OrderKey: 7,
                 Action:   "category_list_added",
                 CategoryList: []contract.Category{
                     expectedCategory1,
@@ -335,7 +322,7 @@ func TestLabelTemplate_Live(t *testing.T) {
                 },
             },
             {
-                OrderKey: 8,
+                OrderKey: 7,
                 Action:   "category_list_unlinked",
                 CategoryList: []contract.Category{
                     expectedCategory1,
@@ -397,5 +384,15 @@ func TestLabelTemplate_Live(t *testing.T) {
 
             require.ErrorContains(t, err, "генерация этикетки с таким идентификатором уже существует")
         })
+    })
+
+    t.Run("5. Чтобы возвращалась уникальная ошибка при попытке удалить уже удалённый шаблон", func(t *testing.T) {
+        err := app.Delete(t.Context(), expectedTemplateID)
+        require.NoError(t, err)
+
+        err = app.Delete(t.Context(), expectedTemplateID)
+
+        require.Error(t, err)
+        require.ErrorContains(t, err, "попытка удалить уже удалённый шаблон")
     })
 }
