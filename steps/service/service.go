@@ -9,6 +9,7 @@ import (
     "strings"
 
     "effective-architecture/steps/contract"
+    "effective-architecture/steps/contract/external"
 )
 
 var (
@@ -26,17 +27,24 @@ var (
 )
 
 type Service struct {
-    repository           *Repository
-    historyRepository    *HistoryRepository
-    vsCategoryRepository *VsCategoryRepository
+    repository                        *Repository
+    historyRepository                 *HistoryRepository
+    vsCategoryRepository              *VsCategoryRepository
+    ozonService                       external.IExternalServiceOzon
+    categoryVsLabelTemplateRepository *CategoryVsLabelTemplateRepository
+    labelRepository                   *LabelRepository
 }
 
 func NewService(repository *Repository, historyRepository *HistoryRepository,
-    categoryRepository *VsCategoryRepository) *Service {
+    categoryRepository *VsCategoryRepository, ozonService external.IExternalServiceOzon,
+    categoryVsLabelTemplateRepository *CategoryVsLabelTemplateRepository, labelRepository *LabelRepository) *Service {
     return &Service{
-        repository:           repository,
-        historyRepository:    historyRepository,
-        vsCategoryRepository: categoryRepository,
+        repository:                        repository,
+        historyRepository:                 historyRepository,
+        vsCategoryRepository:              categoryRepository,
+        ozonService:                       ozonService,
+        categoryVsLabelTemplateRepository: categoryVsLabelTemplateRepository,
+        labelRepository:                   labelRepository,
     }
 }
 
@@ -189,6 +197,17 @@ func (s Service) AddCategoryList(ctx context.Context, labelTemplateID string, ca
         if err != nil {
             return err
         }
+
+        model := CategoryIDVsLabelTemplateID{
+            LabelTemplateID: labelTemplateID,
+            CategoryID:      vsCategoryModel.CategoryID,
+            TypeID:          vsCategoryModel.TypeID,
+        }
+
+        err = s.categoryVsLabelTemplateRepository.Create(ctx, model)
+        if err != nil {
+            return err
+        }
     }
 
     serviceCategoryList, err := mapHistoryCategoryToService(categoryList)
@@ -220,6 +239,17 @@ func (s Service) UnlinkCategoryList(ctx context.Context, labelTemplateID string,
         if err != nil {
             return err
         }
+
+        model := CategoryIDVsLabelTemplateID{
+            LabelTemplateID: labelTemplateID,
+            CategoryID:      vsCategoryModel.CategoryID,
+            TypeID:          vsCategoryModel.TypeID,
+        }
+
+        err = s.categoryVsLabelTemplateRepository.Delete(ctx, model)
+        if err != nil {
+            return err
+        }
     }
 
     serviceCategoryList, err := mapHistoryCategoryToService(categoryList)
@@ -239,10 +269,42 @@ func (s Service) UnlinkCategoryList(ctx context.Context, labelTemplateID string,
     return nil
 }
 
+func (s Service) StartLabelGeneration(ctx context.Context, labelID string, sku int64) error {
+    err := s.labelRepository.Exists(ctx, labelID)
+    if err != nil {
+        return err
+    }
+
+    product, err := s.ozonService.Product(ctx, sku)
+    if err != nil {
+        return err
+    }
+
+    templateID, err := s.categoryVsLabelTemplateRepository.LabelTemplateID(ctx, product)
+    if err != nil {
+        return err
+    }
+
+    label := Label{
+        ID:              labelID,
+        LabelTemplateID: templateID,
+        SKU:             sku,
+    }
+
+    err = s.labelRepository.Create(ctx, label)
+    if err != nil {
+        return err
+    }
+
+    return nil
+}
+
 func (s Service) Cleanup(ctx context.Context, labelTemplateID string) error {
     _ = s.repository.Delete(ctx, labelTemplateID)
     _ = s.historyRepository.Delete(ctx, labelTemplateID)
     _ = s.vsCategoryRepository.DeleteByLabelTemplateID(ctx, labelTemplateID)
+    _ = s.labelRepository.Delete(ctx, labelTemplateID)
+    _ = s.categoryVsLabelTemplateRepository.DeleteByLabelTemplateID(ctx, labelTemplateID)
 
     return nil
 }

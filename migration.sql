@@ -1,3 +1,5 @@
+-- Sharded by label_template_id:
+
 CREATE TABLE label_templates (
     id UUID PRIMARY KEY,
     manufacturer_organization_name VARCHAR(255) NOT NULL,
@@ -45,3 +47,22 @@ CREATE TABLE label_template_vs_categories (
 );
 
 CREATE UNIQUE INDEX label_template_vs_categories_id_pk ON label_template_vs_categories (label_template_id, category_id, type_id);
+
+-- Sharded by category_id+type_id:
+
+CREATE TABLE category_id_vs_label_template_id (
+    category_id BIGINT NOT NULL,
+    type_id BIGINT,
+    label_template_id UUID NOT NULL,
+    created_at TIMESTAMP NOT NULL
+);
+
+CREATE UNIQUE INDEX category_id_vs_label_template_id_pk ON label_template_vs_categories (category_id, type_id);
+
+-- Sharded by label_id:
+
+CREATE TABLE label (
+    id UUID PRIMARY KEY,
+    sku BIGINT NOT NULL,
+    label_template_id UUID NOT NULL
+)

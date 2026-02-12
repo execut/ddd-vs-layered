@@ -10,13 +10,8 @@ import (
 
 var _ contract.IApplication = (*Application)(nil)
 
-type Application struct {
-}
-
 func NewApplication(ctx context.Context,
-    externalServiceOzon external.IExternalServiceOzon) (*Application, error) {
-    _ = externalServiceOzon
-
+    externalServiceOzon external.IExternalServiceOzon) (*service.Service, error) {
     repository, err := service.NewRepository(ctx)
     if err != nil {
         return nil, err
@@ -32,7 +27,21 @@ func NewApplication(ctx context.Context,
         return nil, err
     }
 
-    return service.NewService(repository, historyRepository, categoryRepository), nil
+    categoryVsLabelTemplateRepository, err := service.NewCategoryVsLabelTemplateRepository(ctx)
+    if err != nil {
+        return nil, err
+    }
+
+    labelRepository, err := service.NewLabelRepository(ctx)
+    if err != nil {
+        return nil, err
+    }
+
+    return service.NewService(repository, historyRepository, categoryRepository, externalServiceOzon,
+        categoryVsLabelTemplateRepository, labelRepository), nil
+}
+
+type Application struct {
 }
 
 func (a *Application) Create(ctx context.Context, labelTemplateID string, manufacturer contract.Manufacturer) error {
