@@ -5,22 +5,26 @@ import (
     "testing"
 
     "effective-architecture/steps/contract"
+    "effective-architecture/steps/contract/external"
     "effective-architecture/steps/presentation"
 
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/require"
+    "go.uber.org/mock/gomock"
 )
 
 const (
-    expectedID                                 = "123e4567-e89b-12d3-a456-426655440001"
-    expectedManufacturerOrganizationName       = "test manufacturer organization name"
-    expectedManufacturerOrganizationAddress    = "test manufacturer organization address"
-    expectedManufacturerEmail                  = "test@test.com"
-    expectedManufacturerSite                   = "https://test.com"
-    expectedNewManufacturerOrganizationName    = "new test manufacturer organization name"
-    expectedNewManufacturerOrganizationAddress = "new test manufacturer organization address"
-    expectedNewManufacturerEmail               = "new-test@test.com"
-    expectedNewManufacturerSite                = "https://new-test.com"
+    expectedTemplateID                               = "123e4567-e89b-12d3-a456-426655440001"
+    expectedLabelGenerationID                        = "223e4567-e89b-12d3-a456-426655440001"
+    expectedManufacturerOrganizationName             = "test manufacturer organization name"
+    expectedManufacturerOrganizationAddress          = "test manufacturer organization address"
+    expectedManufacturerEmail                        = "test@test.com"
+    expectedManufacturerSite                         = "https://test.com"
+    expectedNewManufacturerOrganizationName          = "new test manufacturer organization name"
+    expectedNewManufacturerOrganizationAddress       = "new test manufacturer organization address"
+    expectedNewManufacturerEmail                     = "new-test@test.com"
+    expectedNewManufacturerSite                      = "https://new-test.com"
+    expectedSKU                                int64 = 555
 )
 
 var (
@@ -30,33 +34,37 @@ var (
 func TestLabelTemplate_Live(t *testing.T) {
     t.Parallel()
 
-    app, err := presentation.NewApplication(t.Context())
+    ctrl := gomock.NewController(t)
+    externalOzonMock := external.NewMockIExternalServiceOzon(ctrl)
+    app, err := presentation.NewApplication(t.Context(), externalOzonMock)
     require.NoError(t, err)
-    _ = app.Cleanup(t.Context(), expectedID)
+    _ = app.Cleanup(t.Context(), expectedTemplateID)
+    _ = app.Cleanup(t.Context(), expectedLabelGenerationID)
     t.Cleanup(func() {
-        _ = app.Cleanup(t.Context(), expectedID)
+        _ = app.Cleanup(t.Context(), expectedTemplateID)
+        _ = app.Cleanup(t.Context(), expectedLabelGenerationID)
     })
 
     t.Run("1. Создавать шаблон этикетки товара с UUID и Наименованием организации производителя", func(t *testing.T) {
-        err := app.Create(t.Context(), expectedID, contract.Manufacturer{
+        err := app.Create(t.Context(), expectedTemplateID, contract.Manufacturer{
             OrganizationName: expectedManufacturerOrganizationName,
         })
 
         require.NoError(t, err)
     })
     t.Run("2. Получать данные шаблона в JSON", func(t *testing.T) {
-        result, err := app.Get(t.Context(), expectedID)
+        result, err := app.Get(t.Context(), expectedTemplateID)
 
         require.NoError(t, err)
         assert.Equal(t, contract.LabelTemplate{
-            ID: expectedID,
+            ID: expectedTemplateID,
             Manufacturer: contract.Manufacturer{
                 OrganizationName: expectedManufacturerOrganizationName,
             },
         }, result)
     })
     t.Run("4. Чтобы возвращалась уникальная ошибка при попытке создать уже существующий шаблон", func(t *testing.T) {
-        err := app.Create(t.Context(), expectedID, contract.Manufacturer{
+        err := app.Create(t.Context(), expectedTemplateID, contract.Manufacturer{
             OrganizationName: expectedManufacturerOrganizationName,
         })
 
@@ -64,17 +72,17 @@ func TestLabelTemplate_Live(t *testing.T) {
         assert.ErrorContains(t, err, "попытка создать уже существующий шаблон")
     })
     t.Run("7. Обновлять данные шаблона", func(t *testing.T) {
-        err := app.Update(t.Context(), expectedID, contract.Manufacturer{
+        err := app.Update(t.Context(), expectedTemplateID, contract.Manufacturer{
             OrganizationName: expectedNewManufacturerOrganizationName,
         })
 
         require.NoError(t, err)
-        result, err := app.Get(t.Context(), expectedID)
+        result, err := app.Get(t.Context(), expectedTemplateID)
         require.NoError(t, err)
         assert.Contains(t, result.Manufacturer.OrganizationName, expectedNewManufacturerOrganizationName)
 
         t.Run("и не давать это делать при ошибках из предыдущих пунктов", func(t *testing.T) {
-            err := app.Update(t.Context(), expectedID, contract.Manufacturer{
+            err := app.Update(t.Context(), expectedTemplateID, contract.Manufacturer{
                 OrganizationName: "",
             })
 
@@ -83,14 +91,14 @@ func TestLabelTemplate_Live(t *testing.T) {
         })
     })
     t.Run("3. Удалять шаблон этикетки товара по UUID", func(t *testing.T) {
-        err := app.Delete(t.Context(), expectedID)
+        err := app.Delete(t.Context(), expectedTemplateID)
 
         require.NoError(t, err)
     })
 
     t.Run("8. Указывать и получать поля Адрес, Email, сайт", func(t *testing.T) {
         t.Run("при создании", func(t *testing.T) {
-            err := app.Create(t.Context(), expectedID, contract.Manufacturer{
+            err := app.Create(t.Context(), expectedTemplateID, contract.Manufacturer{
                 OrganizationName:    expectedManufacturerOrganizationName,
                 OrganizationAddress: expectedManufacturerOrganizationAddress,
                 Email:               expectedManufacturerEmail,
@@ -98,7 +106,7 @@ func TestLabelTemplate_Live(t *testing.T) {
             })
 
             require.NoError(t, err)
-            result, err := app.Get(t.Context(), expectedID)
+            result, err := app.Get(t.Context(), expectedTemplateID)
             require.NoError(t, err)
             assert.Equal(t, expectedManufacturerOrganizationName, result.Manufacturer.OrganizationName)
             assert.Equal(t, expectedManufacturerOrganizationAddress, result.Manufacturer.OrganizationAddress)
@@ -106,7 +114,7 @@ func TestLabelTemplate_Live(t *testing.T) {
             assert.Equal(t, expectedManufacturerSite, result.Manufacturer.Site)
         })
         t.Run("и обновлении", func(t *testing.T) {
-            err := app.Update(t.Context(), expectedID, contract.Manufacturer{
+            err := app.Update(t.Context(), expectedTemplateID, contract.Manufacturer{
                 OrganizationName:    expectedNewManufacturerOrganizationName,
                 OrganizationAddress: expectedNewManufacturerOrganizationAddress,
                 Email:               expectedNewManufacturerEmail,
@@ -114,7 +122,7 @@ func TestLabelTemplate_Live(t *testing.T) {
             })
 
             require.NoError(t, err)
-            result, err := app.Get(t.Context(), expectedID)
+            result, err := app.Get(t.Context(), expectedTemplateID)
             require.NoError(t, err)
             assert.Equal(t, expectedNewManufacturerOrganizationName, result.Manufacturer.OrganizationName)
             assert.Equal(t, expectedNewManufacturerOrganizationAddress, result.Manufacturer.OrganizationAddress)
@@ -122,19 +130,10 @@ func TestLabelTemplate_Live(t *testing.T) {
             assert.Equal(t, expectedNewManufacturerSite, result.Manufacturer.Site)
         })
     })
-    t.Run("5. Чтобы возвращалась уникальная ошибка при попытке удалить уже удалённый шаблон", func(t *testing.T) {
-        err := app.Delete(t.Context(), expectedID)
-        require.NoError(t, err)
-
-        err = app.Delete(t.Context(), expectedID)
-
-        require.Error(t, err)
-        require.ErrorContains(t, err, "попытка удалить уже удалённый шаблон")
-    })
     t.Run("6. Чтобы возвращалась уникальная ошибка при попытке создать шаблон, если длина Наименования "+
         "организации производителя", func(t *testing.T) {
         t.Run("> 255", func(t *testing.T) {
-            err := app.Create(t.Context(), expectedID, contract.Manufacturer{
+            err := app.Create(t.Context(), expectedTemplateID, contract.Manufacturer{
                 OrganizationName: strings.Repeat("a", 256),
             })
 
@@ -142,7 +141,7 @@ func TestLabelTemplate_Live(t *testing.T) {
             require.ErrorContains(t, err, "название организации производителя должно быть до 255 символов в длину")
         })
         t.Run("или =0", func(t *testing.T) {
-            err := app.Create(t.Context(), expectedID, contract.Manufacturer{
+            err := app.Create(t.Context(), expectedTemplateID, contract.Manufacturer{
                 OrganizationName: "",
             })
 
@@ -185,7 +184,7 @@ func TestLabelTemplate_Live(t *testing.T) {
                 },
             }
             for _, ttForLengthErrors := range tests {
-                err := app.Create(t.Context(), expectedID, contract.Manufacturer{
+                err := app.Create(t.Context(), expectedTemplateID, contract.Manufacturer{
                     OrganizationName:    expectedManufacturerOrganizationName,
                     OrganizationAddress: ttForLengthErrors.organizationAddress,
                     Email:               ttForLengthErrors.email,
@@ -215,7 +214,7 @@ func TestLabelTemplate_Live(t *testing.T) {
                 },
             }
             for _, ttForWrongFormat := range tests {
-                err := app.Create(t.Context(), expectedID, contract.Manufacturer{
+                err := app.Create(t.Context(), expectedTemplateID, contract.Manufacturer{
                     OrganizationName:    expectedManufacturerOrganizationName,
                     OrganizationAddress: ttForWrongFormat.organizationAddress,
                     Email:               ttForWrongFormat.email,
@@ -229,17 +228,20 @@ func TestLabelTemplate_Live(t *testing.T) {
     })
 
     var (
-        expectedCategory1 = contract.Category{
-            CategoryID: "1",
+        expectedCategory1IDAsInt64 int64 = 1
+        expectedCategory1ID              = "1"
+        expectedCategory2ID              = "2"
+        expectedCategory1                = contract.Category{
+            CategoryID: expectedCategory1ID,
         }
         expectedCategory2 = contract.Category{
-            CategoryID: "2",
+            CategoryID: expectedCategory2ID,
             TypeID:     &expectedCategory2TypeID,
         }
     )
 
     t.Run("11. Привязывать шаблон к списку категорий или категорий+типов", func(t *testing.T) {
-        err = app.AddCategoryList(t.Context(), expectedID, []contract.Category{
+        err = app.AddCategoryList(t.Context(), expectedTemplateID, []contract.Category{
             expectedCategory1,
             expectedCategory2,
         })
@@ -247,7 +249,7 @@ func TestLabelTemplate_Live(t *testing.T) {
         require.NoError(t, err)
 
         t.Run("и получать ошибку при попытке привязать уже существующую категорию", func(t *testing.T) {
-            err = app.AddCategoryList(t.Context(), expectedID, []contract.Category{
+            err = app.AddCategoryList(t.Context(), expectedTemplateID, []contract.Category{
                 expectedCategory2,
             })
 
@@ -257,7 +259,7 @@ func TestLabelTemplate_Live(t *testing.T) {
     })
 
     t.Run("12. Отвязывать шаблон от списка категорий или категорий+типов", func(t *testing.T) {
-        err = app.UnlinkCategoryList(t.Context(), expectedID, []contract.Category{
+        err = app.UnlinkCategoryList(t.Context(), expectedTemplateID, []contract.Category{
             expectedCategory1,
             expectedCategory2,
         })
@@ -265,7 +267,7 @@ func TestLabelTemplate_Live(t *testing.T) {
         require.NoError(t, err)
 
         t.Run("и получать ошибку при попытке отвязать уже отвязанную категорию", func(t *testing.T) {
-            err = app.UnlinkCategoryList(t.Context(), expectedID, []contract.Category{
+            err = app.UnlinkCategoryList(t.Context(), expectedTemplateID, []contract.Category{
                 expectedCategory2,
             })
 
@@ -277,7 +279,7 @@ func TestLabelTemplate_Live(t *testing.T) {
     t.Run("10. Чтобы писалась история операций над шаблонами с возможностью"+
         " выводить все данные в json"+
         "12. Смотреть историю добавления и удаления категорий в шаблоне", func(t *testing.T) {
-        result, err := app.HistoryList(t.Context(), expectedID)
+        result, err := app.HistoryList(t.Context(), expectedTemplateID)
 
         require.NoError(t, err)
         assert.Equal(t, []contract.LabelTemplateHistoryRow{
@@ -313,10 +315,6 @@ func TestLabelTemplate_Live(t *testing.T) {
             },
             {
                 OrderKey: 6,
-                Action:   "deleted",
-            },
-            {
-                OrderKey: 7,
                 Action:   "category_list_added",
                 CategoryList: []contract.Category{
                     expectedCategory1,
@@ -324,7 +322,7 @@ func TestLabelTemplate_Live(t *testing.T) {
                 },
             },
             {
-                OrderKey: 8,
+                OrderKey: 7,
                 Action:   "category_list_unlinked",
                 CategoryList: []contract.Category{
                     expectedCategory1,
@@ -332,5 +330,69 @@ func TestLabelTemplate_Live(t *testing.T) {
                 },
             },
         }, result)
+    })
+
+    t.Run("14. Начинать генерацию этикетки по SKU", func(t *testing.T) {
+        t.Run("и получать ошибку, если SKU отсутствует", func(t *testing.T) {
+            externalOzonMock.EXPECT().Product(gomock.Any(), gomock.Any()).
+                Return(external.Product{}, external.ErrSkuNotFound)
+
+            err = app.StartLabelGeneration(t.Context(), expectedLabelGenerationID, expectedSKU)
+
+            require.ErrorContains(t, err, "sku не найден")
+        })
+
+        t.Run("или для категории SKU нет шаблона", func(t *testing.T) {
+            externalOzonMock.EXPECT().Product(gomock.Any(), gomock.Any()).Return(external.Product{
+                Category: external.CategoryWithType{
+                    Category: external.Category{
+                        ID: 11,
+                    },
+                    TypeID: 11,
+                },
+            }, nil)
+
+            err = app.StartLabelGeneration(t.Context(), expectedLabelGenerationID, expectedSKU)
+
+            require.ErrorContains(t, err, "шаблон этикетки для SKU не найден")
+        })
+
+        err = app.AddCategoryList(t.Context(), expectedTemplateID, []contract.Category{
+            expectedCategory1,
+        })
+        require.NoError(t, err)
+        externalOzonMock.EXPECT().Product(t.Context(), expectedSKU).Return(external.Product{
+            Category: external.CategoryWithType{
+                Category: external.Category{
+                    ID: 5,
+                    ParentCategory: &external.Category{
+                        ParentCategory: &external.Category{
+                            ID: expectedCategory1IDAsInt64,
+                        },
+                    },
+                },
+                TypeID: 2,
+            },
+        }, nil)
+
+        err := app.StartLabelGeneration(t.Context(), expectedLabelGenerationID, expectedSKU)
+
+        require.NoError(t, err)
+
+        t.Run("или такая генерация уже была запущена", func(t *testing.T) {
+            err = app.StartLabelGeneration(t.Context(), expectedLabelGenerationID, expectedSKU)
+
+            require.ErrorContains(t, err, "генерация этикетки с таким идентификатором уже существует")
+        })
+    })
+
+    t.Run("5. Чтобы возвращалась уникальная ошибка при попытке удалить уже удалённый шаблон", func(t *testing.T) {
+        err := app.Delete(t.Context(), expectedTemplateID)
+        require.NoError(t, err)
+
+        err = app.Delete(t.Context(), expectedTemplateID)
+
+        require.Error(t, err)
+        require.ErrorContains(t, err, "попытка удалить уже удалённый шаблон")
     })
 }

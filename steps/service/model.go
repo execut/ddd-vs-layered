@@ -44,3 +44,15 @@ type LabelTemplateVsCategory struct {
     CategoryID      int64
     TypeID          *int64
 }
+
+type CategoryIDVsLabelTemplateID struct {
+    CategoryID      int64
+    TypeID          *int64
+    LabelTemplateID string
+}
+
+type Label struct {
+    ID              string
+    LabelTemplateID string
+    SKU             int64
+}

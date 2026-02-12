@@ -4,15 +4,14 @@ import (
     "context"
 
     "effective-architecture/steps/contract"
+    "effective-architecture/steps/contract/external"
     "effective-architecture/steps/service"
 )
 
 var _ contract.IApplication = (*Application)(nil)
 
-type Application struct {
-}
-
-func NewApplication(ctx context.Context) (*service.Service, error) {
+func NewApplication(ctx context.Context,
+    externalServiceOzon external.IExternalServiceOzon) (*service.Service, error) {
     repository, err := service.NewRepository(ctx)
     if err != nil {
         return nil, err
@@ -28,7 +27,21 @@ func NewApplication(ctx context.Context) (*service.Service, error) {
         return nil, err
     }
 
-    return service.NewService(repository, historyRepository, categoryRepository), nil
+    categoryVsLabelTemplateRepository, err := service.NewCategoryVsLabelTemplateRepository(ctx)
+    if err != nil {
+        return nil, err
+    }
+
+    labelRepository, err := service.NewLabelRepository(ctx)
+    if err != nil {
+        return nil, err
+    }
+
+    return service.NewService(repository, historyRepository, categoryRepository, externalServiceOzon,
+        categoryVsLabelTemplateRepository, labelRepository), nil
+}
+
+type Application struct {
 }
 
 func (a *Application) Create(ctx context.Context, labelTemplateID string, manufacturer contract.Manufacturer) error {
@@ -91,6 +104,22 @@ func (a *Application) UnlinkCategoryList(ctx context.Context, labelTemplateID st
 func (a *Application) Cleanup(ctx context.Context, labelTemplateID string) error {
     _ = ctx
     _ = labelTemplateID
+
+    return nil
+}
+
+func (a *Application) IDByCategoryWithType(ctx context.Context,
+    categoryWithType contract.CategoryWithType) (string, error) {
+    _ = ctx
+    _ = categoryWithType
+
+    return "", nil
+}
+
+func (a *Application) StartLabelGeneration(ctx context.Context, labelTemplateID string, sku int64) error {
+    _ = ctx
+    _ = labelTemplateID
+    _ = sku
 
     return nil
 }
