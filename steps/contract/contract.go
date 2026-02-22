@@ -60,7 +60,6 @@ type LabelGeneration struct {
 type LabelGenerationStatus string
 
 const (
-	LabelGenerationStatusCreated    LabelGenerationStatus = "Создано"
 	LabelGenerationStatusGeneration LabelGenerationStatus = "Генерация"
 	LabelGenerationStatusGenerated  LabelGenerationStatus = "Сгенерировано"
 )
