@@ -14,17 +14,18 @@ import (
 )
 
 const (
-	expectedTemplateID                               = "123e4567-e89b-12d3-a456-426655440001"
-	expectedLabelGenerationID                        = "223e4567-e89b-12d3-a456-426655440001"
-	expectedManufacturerOrganizationName             = "test manufacturer organization name"
-	expectedManufacturerOrganizationAddress          = "test manufacturer organization address"
-	expectedManufacturerEmail                        = "test@test.com"
-	expectedManufacturerSite                         = "https://test.com"
-	expectedNewManufacturerOrganizationName          = "new test manufacturer organization name"
-	expectedNewManufacturerOrganizationAddress       = "new test manufacturer organization address"
-	expectedNewManufacturerEmail                     = "new-test@test.com"
-	expectedNewManufacturerSite                      = "https://new-test.com"
-	expectedSKU                                int64 = 555
+	expectedTemplateID                                = "123e4567-e89b-12d3-a456-426655440001"
+	expectedLabelGenerationID                         = "223e4567-e89b-12d3-a456-426655440001"
+	expectedManufacturerOrganizationName              = "test manufacturer organization name"
+	expectedManufacturerOrganizationAddress           = "test manufacturer organization address"
+	expectedManufacturerEmail                         = "test@test.com"
+	expectedManufacturerSite                          = "https://test.com"
+	expectedNewManufacturerOrganizationName           = "new test manufacturer organization name"
+	expectedNewManufacturerOrganizationAddress        = "new test manufacturer organization address"
+	expectedNewManufacturerEmail                      = "new-test@test.com"
+	expectedNewManufacturerSite                       = "https://new-test.com"
+	expectedSKU                                int64  = 555
+	expectedProductName                        string = "test product name"
 )
 
 var (
@@ -394,8 +395,9 @@ func TestLabelTemplate_Live(t *testing.T) {
 		assert.Equal(t, contract.LabelGenerationStatusGeneration, response.Status)
 	})
 
-	t.Run("16. Наполнять этикетку данными из внешнего API", func(t *testing.T) {
+	t.Run("16. Наполнять этикетку данными из внешнего API и вычислять по ним шаблон", func(t *testing.T) {
 		externalOzonMock.EXPECT().Product(t.Context(), expectedSKU).Return(external.Product{
+			Name: expectedProductName,
 			Category: external.CategoryWithType{
 				Category: external.Category{
 					ID: 5,
@@ -412,6 +414,9 @@ func TestLabelTemplate_Live(t *testing.T) {
 		err := app.FillLabelGeneration(t.Context(), expectedLabelGenerationID)
 
 		require.NoError(t, err)
+		response, err := app.LabelGeneration(t.Context(), expectedLabelGenerationID)
+		require.NoError(t, err)
+		assert.Equal(t, contract.LabelGenerationStatusDataFilled, response.Status)
 	})
 
 	t.Run("5. Чтобы возвращалась уникальная ошибка при попытке удалить уже удалённый шаблон", func(t *testing.T) {
