@@ -15,6 +15,7 @@ type IApplication interface {
 
 	StartLabelGeneration(ctx context.Context, generationID string, sku int64) error
 	LabelGeneration(ctx context.Context, generationID string) (LabelGeneration, error)
+	FillLabelGeneration(ctx context.Context, generationID string) error
 }
 
 type LabelTemplateHistoryList struct {

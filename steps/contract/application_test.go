@@ -394,6 +394,26 @@ func TestLabelTemplate_Live(t *testing.T) {
 		assert.Equal(t, contract.LabelGenerationStatusGeneration, response.Status)
 	})
 
+	t.Run("16. Наполнять этикетку данными из внешнего API", func(t *testing.T) {
+		externalOzonMock.EXPECT().Product(t.Context(), expectedSKU).Return(external.Product{
+			Category: external.CategoryWithType{
+				Category: external.Category{
+					ID: 5,
+					ParentCategory: &external.Category{
+						ParentCategory: &external.Category{
+							ID: expectedCategory1IDAsInt64,
+						},
+					},
+				},
+				TypeID: 2,
+			},
+		}, nil)
+
+		err := app.FillLabelGeneration(t.Context(), expectedLabelGenerationID)
+
+		require.NoError(t, err)
+	})
+
 	t.Run("5. Чтобы возвращалась уникальная ошибка при попытке удалить уже удалённый шаблон", func(t *testing.T) {
 		err := app.Delete(t.Context(), expectedTemplateID)
 		require.NoError(t, err)
