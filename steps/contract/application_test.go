@@ -417,7 +417,6 @@ func TestLabelTemplate_Live(t *testing.T) {
 		response, err := app.LabelGeneration(t.Context(), expectedLabelGenerationID)
 		require.NoError(t, err)
 		assert.Equal(t, contract.LabelGenerationStatusDataFilled, response.Status)
-
 	})
 
 	t.Run("5. Чтобы возвращалась уникальная ошибка при попытке удалить уже удалённый шаблон", func(t *testing.T) {
