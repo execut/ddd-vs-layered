@@ -62,5 +62,6 @@ type LabelGenerationStatus string
 
 const (
 	LabelGenerationStatusGeneration LabelGenerationStatus = "Генерация"
+	LabelGenerationStatusDataFilled LabelGenerationStatus = "Наполнено данными"
 	LabelGenerationStatusGenerated  LabelGenerationStatus = "Сгенерировано"
 )
