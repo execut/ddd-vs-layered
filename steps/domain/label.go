@@ -12,22 +12,27 @@ var (
 )
 
 type Label struct {
-	ID         LabelID
-	Status     LabelStatus
-	TemplateID LabelTemplateID
-	SKU        int64
-	Product    Product
+	ID           LabelID
+	Status       LabelStatus
+	TemplateID   LabelTemplateID
+	SKU          int64
+	Product      Product
+	Manufacturer Manufacturer
+	File         *LabelFile
 
 	ozonService     IServiceOzon
+	labelGenerator  ILabelGenerator
 	labelRepository IRepository
 	Events          []LabelEvent
 }
 
-func NewLabel(id LabelID, ozonService IServiceOzon, labelRepository IRepository) *Label {
+func NewLabel(id LabelID, ozonService IServiceOzon, labelRepository IRepository,
+	labelGenerator ILabelGenerator) *Label {
 	return &Label{
 		ID:              id,
 		ozonService:     ozonService,
 		labelRepository: labelRepository,
+		labelGenerator:  labelGenerator,
 	}
 }
 
@@ -64,6 +69,23 @@ func (l *Label) FillData(ctx context.Context) error {
 	err = l.addAndApplyEvent(LabelDataFilledEvent{
 		LabelTemplateID: labelTemplate.ID,
 		Product:         product,
+		Manufacturer:    labelTemplate.Manufacturer,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (l *Label) Generate(ctx context.Context) error {
+	labelFile, err := l.labelGenerator.Generate(ctx, l.Product, l.Manufacturer, l.SKU)
+	if err != nil {
+		return err
+	}
+
+	err = l.addAndApplyEvent(LabelGeneratedEvent{
+		LabelFile: labelFile,
 	})
 	if err != nil {
 		return err
@@ -81,6 +103,10 @@ func (l *Label) ApplyEvent(event LabelEvent) error {
 		l.Status = LabelStatusDataFilled
 		l.Product = payload.Product
 		l.TemplateID = payload.LabelTemplateID
+		l.Manufacturer = payload.Manufacturer
+	case LabelGeneratedEvent:
+		l.Status = LabelStatusGenerated
+		l.File = &payload.LabelFile
 	default:
 		return ErrUnsupportedEventType
 	}

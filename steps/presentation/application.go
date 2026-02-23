@@ -1,19 +1,19 @@
 package presentation
 
 import (
-    "context"
-    "fmt"
-    "os"
+	"context"
+	"fmt"
+	"os"
 
-    "effective-architecture/steps/application"
-    "effective-architecture/steps/contract"
-    "effective-architecture/steps/contract/external"
-    "effective-architecture/steps/domain"
-    "effective-architecture/steps/infrastructure"
-    "effective-architecture/steps/infrastructure/history"
-    "effective-architecture/steps/infrastructure/index/category"
+	"effective-architecture/steps/application"
+	"effective-architecture/steps/contract"
+	"effective-architecture/steps/contract/external"
+	"effective-architecture/steps/domain"
+	"effective-architecture/steps/infrastructure"
+	"effective-architecture/steps/infrastructure/history"
+	"effective-architecture/steps/infrastructure/index/category"
 
-    "github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5"
 )
 
 var _ contract.IApplication = (*Application)(nil)
@@ -22,41 +22,44 @@ type Application struct {
 }
 
 func NewApplication(ctx context.Context,
-    externalServiceOzon external.IExternalServiceOzon) (*application.Application, error) {
-    conn, err := pgx.Connect(ctx, os.Getenv("DATABASE_URL"))
-    if err != nil {
-        return nil, fmt.Errorf("unable to connect to database: %w", err)
-    }
+	externalServiceOzon external.IExternalServiceOzon,
+	externalLabelGenerator external.ILabelGenerator) (*application.Application, error) {
+	conn, err := pgx.Connect(ctx, os.Getenv("DATABASE_URL"))
+	if err != nil {
+		return nil, fmt.Errorf("unable to connect to database: %w", err)
+	}
 
-    eventRepository, err := infrastructure.NewEventsRepository(conn)
-    if err != nil {
-        return nil, err
-    }
+	eventRepository, err := infrastructure.NewEventsRepository(conn)
+	if err != nil {
+		return nil, err
+	}
 
-    categoryVsTemplateRepository, err := category.NewRepository(conn)
-    if err != nil {
-        return nil, err
-    }
+	categoryVsTemplateRepository, err := category.NewRepository(conn)
+	if err != nil {
+		return nil, err
+	}
 
-    repository := infrastructure.NewRepository(eventRepository, categoryVsTemplateRepository)
+	repository := infrastructure.NewRepository(eventRepository, categoryVsTemplateRepository)
 
-    historyRepository, err := history.NewRepository(conn)
-    if err != nil {
-        return nil, err
-    }
+	historyRepository, err := history.NewRepository(conn)
+	if err != nil {
+		return nil, err
+	}
 
-    ozonService := infrastructure.NewServiceOzon(externalServiceOzon)
+	ozonService := infrastructure.NewServiceOzon(externalServiceOzon)
 
-    labelRepository := infrastructure.NewLabelRepository(eventRepository)
+	labelRepository := infrastructure.NewLabelRepository(eventRepository)
 
-    app, err := application.NewApplication(repository, historyRepository, []domain.Subscriber{
-        category.NewSubscriber(categoryVsTemplateRepository),
-    }, labelRepository, ozonService)
-    if err != nil {
-        return nil, err
-    }
+	labelGenerator := infrastructure.NewLabelGenerator(externalLabelGenerator)
 
-    return app, nil
+	app, err := application.NewApplication(repository, historyRepository, []domain.Subscriber{
+		category.NewSubscriber(categoryVsTemplateRepository),
+	}, labelRepository, ozonService, labelGenerator)
+	if err != nil {
+		return nil, err
+	}
+
+	return app, nil
 }
 
 func (a *Application) Create(ctx context.Context, labelTemplateID string, manufacturer contract.Manufacturer) error {
@@ -147,6 +150,13 @@ func (a *Application) LabelGeneration(ctx context.Context, generationID string) 
 }
 
 func (a *Application) FillLabelGeneration(ctx context.Context, generationID string) error {
+	_ = ctx
+	_ = generationID
+
+	return nil
+}
+
+func (a *Application) GenerateLabel(ctx context.Context, generationID string) error {
 	_ = ctx
 	_ = generationID
 

@@ -20,11 +20,12 @@ type Application struct {
 	historyRepository history.IRepository
 	labelRepository   domain.ILabelRepository
 	ozonService       domain.IServiceOzon
+	labelGenerator    domain.ILabelGenerator
 }
 
 func NewApplication(repository domain.IRepository,
 	historyRepository history.IRepository, subscriberList []domain.Subscriber, labelRepository domain.ILabelRepository,
-	ozonService domain.IServiceOzon) (*Application, error) {
+	ozonService domain.IServiceOzon, labelGenerator domain.ILabelGenerator) (*Application, error) {
 	subscriberList = append(subscriberList, history.NewSubscriber(historyRepository))
 	dispatcher := domain.NewDispatcher(subscriberList)
 
@@ -34,6 +35,7 @@ func NewApplication(repository domain.IRepository,
 		dispatcher:        dispatcher,
 		labelRepository:   labelRepository,
 		ozonService:       ozonService,
+		labelGenerator:    labelGenerator,
 	}, nil
 }
 
@@ -283,8 +285,14 @@ func (a *Application) LabelGeneration(ctx context.Context, generationID string) 
 		return contract.LabelGeneration{}, err
 	}
 
+	var filePath *string
+	if aggregate.File != nil {
+		filePath = &aggregate.File.Path
+	}
+
 	return contract.LabelGeneration{
-		Status: contract.LabelGenerationStatus(aggregate.Status),
+		Status:   contract.LabelGenerationStatus(aggregate.Status),
+		FilePath: filePath,
 	}, nil
 }
 
@@ -295,6 +303,25 @@ func (a *Application) FillLabelGeneration(ctx context.Context, generationID stri
 	}
 
 	err = aggregate.FillData(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = a.labelRepository.Save(ctx, aggregate)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (a *Application) GenerateLabel(ctx context.Context, generationID string) error {
+	aggregate, err := a.loadLabelGeneration(ctx, generationID)
+	if err != nil {
+		return err
+	}
+
+	err = aggregate.Generate(ctx)
 	if err != nil {
 		return err
 	}
@@ -332,7 +359,7 @@ func (a *Application) loadLabelGeneration(ctx context.Context, id string) (*doma
 		return nil, err
 	}
 
-	label := domain.NewLabel(labelID, a.ozonService, a.repository)
+	label := domain.NewLabel(labelID, a.ozonService, a.repository, a.labelGenerator)
 
 	err = a.labelRepository.Load(ctx, label)
 	if err != nil {

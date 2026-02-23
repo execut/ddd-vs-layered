@@ -46,6 +46,11 @@ func (r LabelRepository) Load(ctx context.Context, aggregate *domain.Label) erro
 			if err != nil {
 				return err
 			}
+		case "domain.LabelGeneratedEvent":
+			err = applyLabelEvent[domain.LabelGeneratedEvent](model, aggregate)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
