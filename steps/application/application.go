@@ -288,6 +288,25 @@ func (a *Application) LabelGeneration(ctx context.Context, generationID string) 
 	}, nil
 }
 
+func (a *Application) FillLabelGeneration(ctx context.Context, generationID string) error {
+	aggregate, err := a.loadLabelGeneration(ctx, generationID)
+	if err != nil {
+		return err
+	}
+
+	err = aggregate.FillData(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = a.labelRepository.Save(ctx, aggregate)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (a *Application) Cleanup(ctx context.Context, id string) error {
 	domainID, err := domain.NewLabelTemplateID(id)
 	if err != nil {
