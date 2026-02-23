@@ -64,7 +64,7 @@ CREATE UNIQUE INDEX category_id_vs_label_template_id_pk ON label_template_vs_cat
 CREATE TABLE label (
     id UUID PRIMARY KEY,
     sku BIGINT NOT NULL,
-    label_template_id UUID NOT NULL,
+    label_template_id UUID,
     status VARCHAR(255) NOT NULL,
     product_name VARCHAR(255)
 )
