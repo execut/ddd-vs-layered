@@ -334,48 +334,6 @@ func TestLabelTemplate_Live(t *testing.T) {
 	})
 
 	t.Run("14. Начинать генерацию этикетки по SKU", func(t *testing.T) {
-		t.Run("и получать ошибку, если SKU отсутствует", func(t *testing.T) {
-			externalOzonMock.EXPECT().Product(gomock.Any(), gomock.Any()).
-				Return(external.Product{}, external.ErrSkuNotFound)
-
-			err = app.StartLabelGeneration(t.Context(), expectedLabelGenerationID, expectedSKU)
-
-			require.ErrorContains(t, err, "sku не найден")
-		})
-
-		t.Run("или для категории SKU нет шаблона", func(t *testing.T) {
-			externalOzonMock.EXPECT().Product(gomock.Any(), gomock.Any()).Return(external.Product{
-				Category: external.CategoryWithType{
-					Category: external.Category{
-						ID: 11,
-					},
-					TypeID: 11,
-				},
-			}, nil)
-
-			err = app.StartLabelGeneration(t.Context(), expectedLabelGenerationID, expectedSKU)
-
-			require.ErrorContains(t, err, "шаблон этикетки для SKU не найден")
-		})
-
-		err = app.AddCategoryList(t.Context(), expectedTemplateID, []contract.Category{
-			expectedCategory1,
-		})
-		require.NoError(t, err)
-		externalOzonMock.EXPECT().Product(t.Context(), expectedSKU).Return(external.Product{
-			Category: external.CategoryWithType{
-				Category: external.Category{
-					ID: 5,
-					ParentCategory: &external.Category{
-						ParentCategory: &external.Category{
-							ID: expectedCategory1IDAsInt64,
-						},
-					},
-				},
-				TypeID: 2,
-			},
-		}, nil)
-
 		err := app.StartLabelGeneration(t.Context(), expectedLabelGenerationID, expectedSKU)
 
 		require.NoError(t, err)
@@ -393,6 +351,35 @@ func TestLabelTemplate_Live(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, contract.LabelGenerationStatusGeneration, response.Status)
+	})
+
+	t.Run("17. При наполнении этикетки данными должен выставляться статус ошибка с сообщением", func(t *testing.T) {
+		err = app.AddCategoryList(t.Context(), expectedTemplateID, []contract.Category{
+			expectedCategory1,
+		})
+		require.NoError(t, err)
+		t.Run("\"sku не найден\", если SKU отсутствует", func(t *testing.T) {
+			externalOzonMock.EXPECT().Product(gomock.Any(), gomock.Any()).
+				Return(external.Product{}, external.ErrSkuNotFound)
+
+			err = app.FillLabelGeneration(t.Context(), expectedLabelGenerationID)
+
+			require.ErrorContains(t, err, "sku не найден")
+		})
+		t.Run("\"шаблон этикетки для SKU не найден\", если для категории SKU нет шаблона", func(t *testing.T) {
+			externalOzonMock.EXPECT().Product(gomock.Any(), gomock.Any()).Return(external.Product{
+				Category: external.CategoryWithType{
+					Category: external.Category{
+						ID: 11,
+					},
+					TypeID: 11,
+				},
+			}, nil)
+
+			err = app.FillLabelGeneration(t.Context(), expectedLabelGenerationID)
+
+			require.ErrorContains(t, err, "шаблон этикетки для SKU не найден")
+		})
 	})
 
 	t.Run("16. Наполнять этикетку данными из внешнего API и вычислять по ним шаблон", func(t *testing.T) {
