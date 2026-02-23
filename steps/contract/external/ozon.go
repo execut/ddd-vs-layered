@@ -2,28 +2,29 @@
 package external
 
 import (
-    "context"
-    "errors"
+	"context"
+	"errors"
 )
 
 var (
-    ErrSkuNotFound = errors.New("sku не найден")
+	ErrSkuNotFound = errors.New("sku не найден")
 )
 
 type IExternalServiceOzon interface {
-    Product(ctx context.Context, sku int64) (Product, error)
+	Product(ctx context.Context, sku int64) (Product, error)
 }
 
 type Product struct {
-    Category CategoryWithType
+	Name     string
+	Category CategoryWithType
 }
 
 type CategoryWithType struct {
-    Category Category
-    TypeID   int64
+	Category Category
+	TypeID   int64
 }
 
 type Category struct {
-    ID             int64
-    ParentCategory *Category
+	ID             int64
+	ParentCategory *Category
 }
