@@ -13,9 +13,10 @@ type Application struct {
 }
 
 func NewApplication(ctx context.Context,
-	externalServiceOzon external.IExternalServiceOzon) (*Application, error) {
+	externalServiceOzon external.IExternalServiceOzon, generator external.ILabelGenerator) (*Application, error) {
 	_ = ctx
 	_ = externalServiceOzon
+	_ = generator
 
 	return &Application{}, nil
 }
@@ -108,6 +109,13 @@ func (a *Application) LabelGeneration(ctx context.Context, generationID string) 
 }
 
 func (a *Application) FillLabelGeneration(ctx context.Context, generationID string) error {
+	_ = ctx
+	_ = generationID
+
+	return nil
+}
+
+func (a *Application) GenerateLabel(ctx context.Context, generationID string) error {
 	_ = ctx
 	_ = generationID
 
