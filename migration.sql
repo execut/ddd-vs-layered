@@ -57,7 +57,7 @@ CREATE TABLE category_id_vs_label_template_id (
     created_at TIMESTAMP NOT NULL
 );
 
-CREATE UNIQUE INDEX category_id_vs_label_template_id_pk ON label_template_vs_categories (category_id, type_id);
+CREATE UNIQUE INDEX category_id_vs_label_template_id_pk ON label_template_vs_categories (category_id, type_id, label_template_id);
 
 -- Sharded by label_id:
 
@@ -65,5 +65,6 @@ CREATE TABLE label (
     id UUID PRIMARY KEY,
     sku BIGINT NOT NULL,
     label_template_id UUID NOT NULL,
-    status VARCHAR(255) NOT NULL
+    status VARCHAR(255) NOT NULL,
+    product_name VARCHAR(255)
 )

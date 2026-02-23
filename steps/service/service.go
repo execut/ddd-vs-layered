@@ -311,6 +311,34 @@ func (s Service) LabelGeneration(ctx context.Context, id string) (contract.Label
 	}, nil
 }
 
+func (s Service) FillLabelGeneration(ctx context.Context, generationID string) error {
+	label, err := s.labelRepository.Get(ctx, generationID)
+	if err != nil {
+		return err
+	}
+
+	product, err := s.ozonService.Product(ctx, label.SKU)
+	if err != nil {
+		return err
+	}
+
+	templateID, err := s.categoryVsLabelTemplateRepository.LabelTemplateID(ctx, product)
+	if err != nil {
+		return err
+	}
+
+	label.LabelTemplateID = templateID
+	label.Status = contract.LabelGenerationStatusDataFilled
+	label.ProductName = product.Name
+
+	err = s.labelRepository.Update(ctx, label)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s Service) Cleanup(ctx context.Context, labelTemplateID string) error {
 	_ = s.repository.Delete(ctx, labelTemplateID)
 	_ = s.historyRepository.Delete(ctx, labelTemplateID)
