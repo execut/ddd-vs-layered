@@ -43,7 +43,7 @@ func (m *MockIExternalServiceOzon) EXPECT() *MockIExternalServiceOzonMockRecorde
 // Product mocks base method.
 func (m *MockIExternalServiceOzon) Product(ctx context.Context, sku int64) (Product, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Product", ctx, sku)
+	ret := m.ctrl.Call(m, "ProductData", ctx, sku)
 	ret0, _ := ret[0].(Product)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
@@ -52,5 +52,5 @@ func (m *MockIExternalServiceOzon) Product(ctx context.Context, sku int64) (Prod
 // Product indicates an expected call of Product.
 func (mr *MockIExternalServiceOzonMockRecorder) Product(ctx, sku any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Product", reflect.TypeOf((*MockIExternalServiceOzon)(nil).Product), ctx, sku)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProductData", reflect.TypeOf((*MockIExternalServiceOzon)(nil).Product), ctx, sku)
 }

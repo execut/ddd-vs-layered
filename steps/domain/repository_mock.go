@@ -68,19 +68,19 @@ func (mr *MockIRepositoryMockRecorder) Load(ctx, aggregate any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Load", reflect.TypeOf((*MockIRepository)(nil).Load), ctx, aggregate)
 }
 
-// LoadByCategories mocks base method.
-func (m *MockIRepository) LoadByCategoryList(ctx context.Context, categories []Category) (*LabelTemplate, error) {
+// LoadByCategoryList mocks base method.
+func (m *MockIRepository) LoadByCategoryList(ctx context.Context, categoryList []Category) (*LabelTemplate, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "LoadByCategoryList", ctx, categories)
+	ret := m.ctrl.Call(m, "LoadByCategoryList", ctx, categoryList)
 	ret0, _ := ret[0].(*LabelTemplate)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// LoadByCategories indicates an expected call of LoadByCategories.
-func (mr *MockIRepositoryMockRecorder) LoadByCategories(ctx, categories any) *gomock.Call {
+// LoadByCategoryList indicates an expected call of LoadByCategoryList.
+func (mr *MockIRepositoryMockRecorder) LoadByCategoryList(ctx, categoryList any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadByCategoryList", reflect.TypeOf((*MockIRepository)(nil).LoadByCategoryList), ctx, categories)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadByCategoryList", reflect.TypeOf((*MockIRepository)(nil).LoadByCategoryList), ctx, categoryList)
 }
 
 // Save mocks base method.

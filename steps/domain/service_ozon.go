@@ -4,5 +4,5 @@ package domain
 import "context"
 
 type IServiceOzon interface {
-    CategoryList(ctx context.Context, sku int64) ([]Category, error)
+	ProductData(ctx context.Context, sku int64) ([]Category, Product, error)
 }

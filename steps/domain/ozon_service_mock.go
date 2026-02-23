@@ -40,17 +40,18 @@ func (m *MockIServiceOzon) EXPECT() *MockIServiceOzonMockRecorder {
 	return m.recorder
 }
 
-// CategoryList mocks base method.
-func (m *MockIServiceOzon) CategoryList(ctx context.Context, sku int64) ([]Category, error) {
+// ProductData mocks base method.
+func (m *MockIServiceOzon) ProductData(ctx context.Context, sku int64) ([]Category, Product, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CategoryList", ctx, sku)
+	ret := m.ctrl.Call(m, "ProductData", ctx, sku)
 	ret0, _ := ret[0].([]Category)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret1, _ := ret[1].(Product)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
 }
 
-// CategoryList indicates an expected call of CategoryList.
-func (mr *MockIServiceOzonMockRecorder) CategoryList(ctx, sku any) *gomock.Call {
+// ProductData indicates an expected call of ProductData.
+func (mr *MockIServiceOzonMockRecorder) ProductData(ctx, sku any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CategoryList", reflect.TypeOf((*MockIServiceOzon)(nil).CategoryList), ctx, sku)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProductData", reflect.TypeOf((*MockIServiceOzon)(nil).ProductData), ctx, sku)
 }
