@@ -10,4 +10,9 @@ type LabelGenerationStartedEvent struct {
 type LabelDataFilledEvent struct {
 	LabelTemplateID LabelTemplateID
 	Product         Product
+	Manufacturer    Manufacturer
+}
+
+type LabelGeneratedEvent struct {
+	LabelFile LabelFile
 }

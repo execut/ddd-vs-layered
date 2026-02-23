@@ -22,7 +22,8 @@ type Application struct {
 }
 
 func NewApplication(ctx context.Context,
-	externalServiceOzon external.IExternalServiceOzon, externalLabelGenerator external.ILabelGenerator) (*application.Application, error) {
+	externalServiceOzon external.IExternalServiceOzon,
+	externalLabelGenerator external.ILabelGenerator) (*application.Application, error) {
 	conn, err := pgx.Connect(ctx, os.Getenv("DATABASE_URL"))
 	if err != nil {
 		return nil, fmt.Errorf("unable to connect to database: %w", err)
@@ -49,10 +50,11 @@ func NewApplication(ctx context.Context,
 
 	labelRepository := infrastructure.NewLabelRepository(eventRepository)
 
-	_ = externalLabelGenerator
+	labelGenerator := infrastructure.NewLabelGenerator(externalLabelGenerator)
+
 	app, err := application.NewApplication(repository, historyRepository, []domain.Subscriber{
 		category.NewSubscriber(categoryVsTemplateRepository),
-	}, labelRepository, ozonService)
+	}, labelRepository, ozonService, labelGenerator)
 	if err != nil {
 		return nil, err
 	}

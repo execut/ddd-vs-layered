@@ -12,8 +12,9 @@ import (
 )
 
 const (
-	expectedSKU         int64 = 1
-	expectedProductName       = "test product name"
+	expectedSKU           int64 = 1
+	expectedProductName         = "test product name"
+	expectedLabelFilePath       = "test label file path"
 )
 
 var (
@@ -22,14 +23,16 @@ var (
 		expectedCategory1,
 		expectedCategory2WithoutType,
 	}
-	expectedProduct, _ = domain.NewProduct(expectedProductName)
+	expectedProduct, _   = domain.NewProduct(expectedProductName)
+	expectedLabelFile, _ = domain.NewLabelFile(expectedLabelFilePath)
 )
 
 func TestLabel(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	ozonServiceMock := domain.NewMockIServiceOzon(ctrl)
 	labelRepository := domain.NewMockIRepository(ctrl)
-	label := domain.NewLabel(expectedLabelID, ozonServiceMock, labelRepository)
+	labelGeneratorMock := domain.NewMockILabelGenerator(ctrl)
+	label := domain.NewLabel(expectedLabelID, ozonServiceMock, labelRepository, labelGeneratorMock)
 
 	t.Run("14. Начинать генерацию этикетки по SKU", func(t *testing.T) {
 		err := label.StartGeneration(expectedSKU)
@@ -67,7 +70,8 @@ func TestLabel(t *testing.T) {
 			expectedCategory1,
 			expectedCategory2WithoutType,
 		}).Return(&domain.LabelTemplate{
-			ID: expectedLabelTemplateID,
+			ID:           expectedLabelTemplateID,
+			Manufacturer: expectedManufacturer,
 		}, nil)
 
 		err := label.FillData(t.Context())
@@ -76,5 +80,17 @@ func TestLabel(t *testing.T) {
 		assert.Equal(t, expectedLabelTemplateID, label.TemplateID)
 		assert.Equal(t, expectedProduct, label.Product)
 		assert.Equal(t, domain.LabelStatusDataFilled, label.Status)
+	})
+
+	t.Run("18. Генерировать этикетку через внешний сервис, передавая ему все нужные данные", func(t *testing.T) {
+		labelGeneratorMock.EXPECT().Generate(t.Context(), expectedProduct, expectedManufacturer, expectedSKU).
+			Return(expectedLabelFile, nil)
+
+		err := label.Generate(t.Context())
+
+		require.NoError(t, err)
+		assert.Equal(t, domain.LabelStatusGenerated, label.Status)
+		require.NotNil(t, label.File)
+		assert.Equal(t, expectedLabelFile, *label.File)
 	})
 }
