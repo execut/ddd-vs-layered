@@ -55,7 +55,8 @@ type CategoryWithType struct {
 }
 
 type LabelGeneration struct {
-	Status LabelGenerationStatus
+	Status   LabelGenerationStatus
+	FilePath *string
 }
 
 type LabelGenerationStatus string
@@ -65,3 +66,9 @@ const (
 	LabelGenerationStatusDataFilled LabelGenerationStatus = "Наполнено данными"
 	LabelGenerationStatusGenerated  LabelGenerationStatus = "Сгенерировано"
 )
+
+type Product struct {
+	Name         string
+	Manufacturer Manufacturer
+	SKU          int64
+}

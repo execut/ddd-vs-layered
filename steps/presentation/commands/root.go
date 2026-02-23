@@ -1,68 +1,68 @@
 package commands
 
 import (
-    "context"
+	"context"
 
-    "effective-architecture/steps/contract"
-    "effective-architecture/steps/presentation"
-    "effective-architecture/steps/presentation/external"
+	"effective-architecture/steps/contract"
+	"effective-architecture/steps/presentation"
+	"effective-architecture/steps/presentation/external"
 
-    "github.com/spf13/cobra"
+	"github.com/spf13/cobra"
 )
 
 var (
-    rootCmd = &cobra.Command{
-        Use:   "",
-        Short: "",
-        Long:  ``,
-    }
-    labelTemplateID     string
-    organizationName    string
-    organizationAddress string
-    site                string
-    email               string
-    initiators          = []func(ctx context.Context, app contract.IApplication) error{
-        InitLabelsCreateTemplate,
-        InitLabelsDeleteTemplate,
-        InitLabelsGetTemplate,
-        InitLabelsTemplateAddCategoryList,
-        InitLabelsTemplateHistory,
-        InitLabelsUpdateTemplate,
-    }
+	rootCmd = &cobra.Command{
+		Use:   "",
+		Short: "",
+		Long:  ``,
+	}
+	labelTemplateID     string
+	organizationName    string
+	organizationAddress string
+	site                string
+	email               string
+	initiators          = []func(ctx context.Context, app contract.IApplication) error{
+		InitLabelsCreateTemplate,
+		InitLabelsDeleteTemplate,
+		InitLabelsGetTemplate,
+		InitLabelsTemplateAddCategoryList,
+		InitLabelsTemplateHistory,
+		InitLabelsUpdateTemplate,
+	}
 )
 
 func Execute() error {
-    ctx := context.Background()
+	ctx := context.Background()
 
-    app, err := presentation.NewApplication(ctx, external.NewServiceOzon())
-    if err != nil {
-        panic(err)
-    }
+	app, err := presentation.NewApplication(ctx, external.NewServiceOzon(), external.NewLabelGenerator())
+	if err != nil {
+		panic(err)
+	}
 
-    for _, initiator := range initiators {
-        err := initiator(ctx, app)
-        if err != nil {
-            return err
-        }
-    }
+	for _, initiator := range initiators {
+		err := initiator(ctx, app)
+		if err != nil {
+			return err
+		}
+	}
 
-    rootCmd.PersistentFlags().StringVarP(&labelTemplateID, "id", "i", "", "id")
+	rootCmd.PersistentFlags().StringVarP(&labelTemplateID, "id", "i", "", "id")
 
-    err = rootCmd.Execute()
-    if err != nil {
-        return err
-    }
+	err = rootCmd.Execute()
+	if err != nil {
+		return err
+	}
 
-    return nil
+	return nil
 }
 
 func initManufacturerFlags(cmd *cobra.Command) {
-    cmd.PersistentFlags().StringVarP(&organizationName, "manufacturer-organization-name",
-        "m", "", "manufacturer-organization-name")
-    cmd.Flags().StringVarP(&organizationAddress, "manufacturer-organization-address",
-        "a", "", "manufacturer-organization-address")
-    cmd.Flags().StringVarP(&email, "manufacturer-email",
-        "e", "", "manufacturer-email")
-    cmd.Flags().StringVarP(&site, "manufacturer-site",
-        "s", "", "manufacturer-site")
+	cmd.PersistentFlags().StringVarP(&organizationName, "manufacturer-organization-name",
+		"m", "", "manufacturer-organization-name")
+	cmd.Flags().StringVarP(&organizationAddress, "manufacturer-organization-address",
+		"a", "", "manufacturer-organization-address")
+	cmd.Flags().StringVarP(&email, "manufacturer-email",
+		"e", "", "manufacturer-email")
+	cmd.Flags().StringVarP(&site, "manufacturer-site",
+		"s", "", "manufacturer-site")
 }
