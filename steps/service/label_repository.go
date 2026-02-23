@@ -12,6 +12,7 @@ import (
 var (
 	ErrLabelAlreadyExists  = errors.New("генерация этикетки с таким идентификатором уже существует")
 	ErrLabelCouldNotCreate = errors.New("could not create label")
+	ErrLabelCouldNotUpdate = errors.New("could not update label")
 	ErrLabelCouldNotDelete = errors.New("could not delete label")
 )
 
@@ -45,15 +46,17 @@ func (r LabelRepository) Exists(ctx context.Context, id string) error {
 	return ErrLabelAlreadyExists
 }
 
-func (r LabelRepository) Get(ctx context.Context, id string) (Label, error) {
+func (r LabelRepository) Get(ctx context.Context, generationID string) (Label, error) {
 	sql := `SELECT label_template_id, sku, status FROM label WHERE id = $1`
 	model := Label{}
 
-	err := r.conn.QueryRow(ctx, sql, id).Scan(&model.LabelTemplateID, &model.SKU,
+	err := r.conn.QueryRow(ctx, sql, generationID).Scan(&model.LabelTemplateID, &model.SKU,
 		&model.Status)
 	if err != nil {
 		return Label{}, err
 	}
+
+	model.ID = generationID
 
 	return model, nil
 }
@@ -76,6 +79,24 @@ func (r LabelRepository) Create(ctx context.Context, model Label) error {
 
 	if result.RowsAffected() == 0 {
 		return ErrLabelCouldNotCreate
+	}
+
+	return nil
+}
+
+func (r LabelRepository) Update(ctx context.Context, model Label) error {
+	sql := `
+       UPDATE label SET label_template_id=$2, sku=$3, status=$4, product_name=$5
+       WHERE id=$1
+   `
+
+	result, err := r.conn.Exec(ctx, sql, model.ID, model.LabelTemplateID, model.SKU, model.Status, model.ProductName)
+	if err != nil {
+		return err
+	}
+
+	if result.RowsAffected() == 0 {
+		return ErrLabelCouldNotUpdate
 	}
 
 	return nil

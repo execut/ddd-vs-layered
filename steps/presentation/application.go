@@ -130,3 +130,10 @@ func (a *Application) LabelGeneration(ctx context.Context, generationID string) 
 
 	return contract.LabelGeneration{}, nil
 }
+
+func (a *Application) FillLabelGeneration(ctx context.Context, generationID string) error {
+	_ = ctx
+	_ = generationID
+
+	return nil
+}
