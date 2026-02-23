@@ -31,28 +31,13 @@ func NewLabel(id LabelID, ozonService IServiceOzon, labelRepository IRepository)
 	}
 }
 
-func (l *Label) StartGeneration(ctx context.Context, sku int64) error {
+func (l *Label) StartGeneration(sku int64) error {
 	if l.Status == LabelStatusGeneration {
 		return ErrLabelAlreadyExists
 	}
 
-	categoryList, _, err := l.ozonService.ProductData(ctx, sku)
-	if err != nil {
-		return err
-	}
-
-	labelTemplate, err := l.labelRepository.LoadByCategoryList(ctx, categoryList)
-	if err != nil {
-		return err
-	}
-
-	if labelTemplate == nil {
-		return ErrLabelTemplateForCategoryNotFound
-	}
-
-	err = l.addAndApplyEvent(LabelGenerationStartedEvent{
-		LabelTemplateID: labelTemplate.ID,
-		SKU:             sku,
+	err := l.addAndApplyEvent(LabelGenerationStartedEvent{
+		SKU: sku,
 	})
 	if err != nil {
 		return err

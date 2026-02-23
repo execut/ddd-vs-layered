@@ -264,7 +264,7 @@ func (a *Application) StartLabelGeneration(ctx context.Context, id string, sku i
 		return err
 	}
 
-	err = label.StartGeneration(ctx, sku)
+	err = label.StartGeneration(sku)
 	if err != nil {
 		return err
 	}

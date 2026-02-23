@@ -1,9 +1,9 @@
 package domain_test
 
 import (
+	"effective-architecture/steps/contract/external"
 	"testing"
 
-	"effective-architecture/steps/contract/external"
 	"effective-architecture/steps/domain"
 
 	"github.com/stretchr/testify/assert"
@@ -31,45 +31,37 @@ func TestLabel(t *testing.T) {
 	labelRepository := domain.NewMockIRepository(ctrl)
 	label := domain.NewLabel(expectedLabelID, ozonServiceMock, labelRepository)
 
-	t.Run("и получать ошибку, если SKU отсутствует", func(t *testing.T) {
-		ozonServiceMock.EXPECT().ProductData(gomock.Any(), gomock.Any()).Return(nil, domain.Product{},
-			external.ErrSkuNotFound)
-
-		err := label.StartGeneration(t.Context(), expectedSKU)
-
-		require.ErrorIs(t, err, external.ErrSkuNotFound)
-	})
-
-	t.Run("или для категории SKU нет шаблона", func(t *testing.T) {
-		ozonServiceMock.EXPECT().ProductData(gomock.Any(), gomock.Any()).Return(expectedCategoryList, domain.Product{}, nil)
-		labelRepository.EXPECT().LoadByCategoryList(t.Context(), expectedCategoryList).Return(nil, nil)
-
-		err := label.StartGeneration(t.Context(), expectedSKU)
-
-		require.ErrorIs(t, err, domain.ErrLabelTemplateForCategoryNotFound)
-	})
-
 	t.Run("14. Начинать генерацию этикетки по SKU", func(t *testing.T) {
-		ozonServiceMock.EXPECT().ProductData(t.Context(), expectedSKU).Return(expectedCategoryList, domain.Product{}, nil)
-		labelRepository.EXPECT().LoadByCategoryList(t.Context(), []domain.Category{
-			expectedCategory1,
-			expectedCategory2WithoutType,
-		}).Return(&domain.LabelTemplate{
-			ID: expectedLabelTemplateID,
-		}, nil)
-
-		err := label.StartGeneration(t.Context(), expectedSKU)
+		err := label.StartGeneration(expectedSKU)
 
 		require.NoError(t, err)
 
 		t.Run("или такая генерация уже была запущена", func(t *testing.T) {
-			err := label.StartGeneration(t.Context(), expectedSKU)
+			err := label.StartGeneration(expectedSKU)
 
 			require.ErrorContains(t, err, "генерация этикетки с таким идентификатором уже существует")
 		})
 	})
 
 	t.Run("16. Наполнять этикетку данными из внешнего API и вычислять по ним шаблон", func(t *testing.T) {
+		t.Run("и получать ошибку, если SKU отсутствует", func(t *testing.T) {
+			ozonServiceMock.EXPECT().ProductData(gomock.Any(), gomock.Any()).Return(nil, domain.Product{},
+				external.ErrSkuNotFound)
+
+			err := label.FillData(t.Context())
+
+			require.ErrorIs(t, err, external.ErrSkuNotFound)
+		})
+
+		t.Run("или для категории SKU нет шаблона", func(t *testing.T) {
+			ozonServiceMock.EXPECT().ProductData(gomock.Any(), gomock.Any()).Return(expectedCategoryList, domain.Product{}, nil)
+			labelRepository.EXPECT().LoadByCategoryList(t.Context(), expectedCategoryList).Return(nil, nil)
+
+			err := label.FillData(t.Context())
+
+			require.ErrorIs(t, err, domain.ErrLabelTemplateForCategoryNotFound)
+		})
+
 		ozonServiceMock.EXPECT().ProductData(t.Context(), expectedSKU).Return(expectedCategoryList, expectedProduct, nil)
 		labelRepository.EXPECT().LoadByCategoryList(t.Context(), []domain.Category{
 			expectedCategory1,
