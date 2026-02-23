@@ -275,21 +275,10 @@ func (s Service) StartLabelGeneration(ctx context.Context, labelID string, sku i
 		return err
 	}
 
-	product, err := s.ozonService.Product(ctx, sku)
-	if err != nil {
-		return err
-	}
-
-	templateID, err := s.categoryVsLabelTemplateRepository.LabelTemplateID(ctx, product)
-	if err != nil {
-		return err
-	}
-
 	label := Label{
-		ID:              labelID,
-		LabelTemplateID: templateID,
-		SKU:             sku,
-		Status:          contract.LabelGenerationStatusGeneration,
+		ID:     labelID,
+		SKU:    sku,
+		Status: contract.LabelGenerationStatusGeneration,
 	}
 
 	err = s.labelRepository.Create(ctx, label)
@@ -327,7 +316,7 @@ func (s Service) FillLabelGeneration(ctx context.Context, generationID string) e
 		return err
 	}
 
-	label.LabelTemplateID = templateID
+	label.LabelTemplateID = &templateID
 	label.Status = contract.LabelGenerationStatusDataFilled
 	label.ProductName = product.Name
 

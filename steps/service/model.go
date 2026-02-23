@@ -55,7 +55,7 @@ type CategoryIDVsLabelTemplateID struct {
 
 type Label struct {
 	ID              string
-	LabelTemplateID string
+	LabelTemplateID *string
 	SKU             int64
 	Status          contract.LabelGenerationStatus
 	ProductName     string

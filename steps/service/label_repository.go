@@ -63,11 +63,11 @@ func (r LabelRepository) Get(ctx context.Context, generationID string) (Label, e
 
 func (r LabelRepository) Create(ctx context.Context, model Label) error {
 	sql := `
-       INSERT INTO label (id, label_template_id, sku, status)
-       VALUES ($1, $2, $3, $4)
+       INSERT INTO label (id, sku, status)
+       VALUES ($1, $2, $3)
    `
 
-	result, err := r.conn.Exec(ctx, sql, model.ID, model.LabelTemplateID, model.SKU, model.Status)
+	result, err := r.conn.Exec(ctx, sql, model.ID, model.SKU, model.Status)
 	if err != nil {
 		const duplicateKeyErr = "duplicate key value violates unique constraint"
 		if strings.Contains(err.Error(), duplicateKeyErr) {
