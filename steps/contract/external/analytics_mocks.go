@@ -41,9 +41,11 @@ func (m *MockIAnalytics) EXPECT() *MockIAnalyticsMockRecorder {
 }
 
 // Send mocks base method.
-func (m *MockIAnalytics) Send(ctx context.Context, event AnalyticsEventType, userID string) {
+func (m *MockIAnalytics) Send(ctx context.Context, event AnalyticsEventType, userID string) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Send", ctx, event, userID)
+	ret := m.ctrl.Call(m, "Send", ctx, event, userID)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // Send indicates an expected call of Send.
