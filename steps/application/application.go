@@ -16,7 +16,6 @@ var ErrCategoryEmpty = errors.New("wrong category")
 
 type Application struct {
 	repository        domain.IRepository
-	dispatcher        *domain.Dispatcher
 	historyRepository history.IRepository
 	labelRepository   domain.ILabelRepository
 	ozonService       domain.IServiceOzon
@@ -24,15 +23,11 @@ type Application struct {
 }
 
 func NewApplication(repository domain.IRepository,
-	historyRepository history.IRepository, subscriberList []domain.Subscriber, labelRepository domain.ILabelRepository,
+	historyRepository history.IRepository, labelRepository domain.ILabelRepository,
 	ozonService domain.IServiceOzon, labelGenerator domain.ILabelGenerator) (*Application, error) {
-	subscriberList = append(subscriberList, history.NewSubscriber(historyRepository))
-	dispatcher := domain.NewDispatcher(subscriberList)
-
 	return &Application{
 		repository:        repository,
 		historyRepository: historyRepository,
-		dispatcher:        dispatcher,
 		labelRepository:   labelRepository,
 		ozonService:       ozonService,
 		labelGenerator:    labelGenerator,
@@ -51,11 +46,6 @@ func (a *Application) Create(ctx context.Context, userID string, id string, manu
 	}
 
 	err = domainLabel.Create(userID, domainManufacturer)
-	if err != nil {
-		return err
-	}
-
-	err = a.dispatcher.Dispatch(ctx, domainLabel)
 	if err != nil {
 		return err
 	}
@@ -98,11 +88,6 @@ func (a *Application) Delete(ctx context.Context, userID string, id string) erro
 		return err
 	}
 
-	err = a.dispatcher.Dispatch(ctx, domainLabel)
-	if err != nil {
-		return err
-	}
-
 	err = a.repository.Save(ctx, domainLabel)
 	if err != nil {
 		return err
@@ -124,11 +109,6 @@ func (a *Application) Update(ctx context.Context, userID string, uuid string,
 	}
 
 	err = domainLabel.Update(userID, domainManufacturer)
-	if err != nil {
-		return err
-	}
-
-	err = a.dispatcher.Dispatch(ctx, domainLabel)
 	if err != nil {
 		return err
 	}
@@ -183,11 +163,6 @@ func (a *Application) AddCategoryList(ctx context.Context, userID string, labelT
 		return err
 	}
 
-	err = a.dispatcher.Dispatch(ctx, domainLabel)
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -213,11 +188,6 @@ func (a *Application) UnlinkCategoryList(ctx context.Context, userID string, lab
 		return err
 	}
 
-	err = a.dispatcher.Dispatch(ctx, domainLabel)
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -237,11 +207,6 @@ func (a *Application) Deactivate(ctx context.Context, userID string, labelTempla
 		return err
 	}
 
-	err = a.dispatcher.Dispatch(ctx, domainLabel)
-	if err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -257,11 +222,6 @@ func (a *Application) Activate(ctx context.Context, userID string, labelTemplate
 	}
 
 	err = a.repository.Save(ctx, domainLabel)
-	if err != nil {
-		return err
-	}
-
-	err = a.dispatcher.Dispatch(ctx, domainLabel)
 	if err != nil {
 		return err
 	}
