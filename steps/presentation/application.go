@@ -2,6 +2,8 @@ package presentation
 
 import (
 	"context"
+	history2 "effective-architecture/steps/domain/history"
+	"effective-architecture/steps/presentation/external/analytics"
 	"fmt"
 	"os"
 
@@ -23,7 +25,8 @@ type Application struct {
 
 func NewApplication(ctx context.Context,
 	externalServiceOzon external.IExternalServiceOzon,
-	externalLabelGenerator external.ILabelGenerator) (*application.Application, error) {
+	externalLabelGenerator external.ILabelGenerator,
+	analyticsService external.IAnalytics) (*application.Application, error) {
 	conn, err := pgx.Connect(ctx, os.Getenv("DATABASE_URL"))
 	if err != nil {
 		return nil, fmt.Errorf("unable to connect to database: %w", err)
@@ -39,22 +42,28 @@ func NewApplication(ctx context.Context,
 		return nil, err
 	}
 
-	repository := infrastructure.NewRepository(eventRepository, categoryVsTemplateRepository)
-
 	historyRepository, err := history.NewRepository(conn)
 	if err != nil {
 		return nil, err
 	}
 
+	dispatcher := domain.NewDispatcher([]domain.Subscriber{
+		category.NewSubscriber(categoryVsTemplateRepository),
+		analytics.NewSubscriber(analyticsService),
+		history2.NewSubscriber(historyRepository),
+	})
+	repository := infrastructure.NewRepository(eventRepository, categoryVsTemplateRepository, dispatcher)
+
 	ozonService := infrastructure.NewServiceOzon(externalServiceOzon)
 
-	labelRepository := infrastructure.NewLabelRepository(eventRepository)
+	labelDispatcher := domain.NewLabelDispatcher([]domain.LabelSubscriber{
+		analytics.NewLabelSubscriber(analyticsService),
+	})
+	labelRepository := infrastructure.NewLabelRepository(eventRepository, labelDispatcher)
 
 	labelGenerator := infrastructure.NewLabelGenerator(externalLabelGenerator)
 
-	app, err := application.NewApplication(repository, historyRepository, []domain.Subscriber{
-		category.NewSubscriber(categoryVsTemplateRepository),
-	}, labelRepository, ozonService, labelGenerator)
+	app, err := application.NewApplication(repository, historyRepository, labelRepository, ozonService, labelGenerator)
 	if err != nil {
 		return nil, err
 	}

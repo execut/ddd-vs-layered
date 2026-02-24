@@ -15,12 +15,14 @@ import (
 var _ domain.ILabelRepository = (*LabelRepository)(nil)
 
 type LabelRepository struct {
-	db *EventsRepository
+	db         *EventsRepository
+	dispatcher *domain.LabelDispatcher
 }
 
-func NewLabelRepository(db *EventsRepository) *LabelRepository {
+func NewLabelRepository(db *EventsRepository, dispatcher *domain.LabelDispatcher) *LabelRepository {
 	return &LabelRepository{
-		db: db,
+		db:         db,
+		dispatcher: dispatcher,
 	}
 }
 
@@ -77,6 +79,11 @@ func (r LabelRepository) Save(ctx context.Context, aggregate *domain.Label) erro
 	}
 
 	err := r.db.Save(ctx, eventModelList)
+	if err != nil {
+		return err
+	}
+
+	err = r.dispatcher.Dispatch(ctx, aggregate)
 	if err != nil {
 		return err
 	}
