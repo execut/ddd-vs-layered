@@ -10,6 +10,8 @@ import (
 
 	"effective-architecture/steps/contract"
 	"effective-architecture/steps/contract/external"
+
+	"github.com/jackc/pgx/v5"
 )
 
 var (
@@ -51,22 +53,44 @@ func NewService(repository *Repository, historyRepository *HistoryRepository,
 	}
 }
 
-func (s Service) Create(ctx context.Context, labelTemplateID string,
+func (s Service) Create(ctx context.Context, userID, labelTemplateID string,
 	manufacturer contract.Manufacturer) error {
+	err := s.validateManufacturer(manufacturer)
+	if err != nil {
+		return err
+	}
+
+	hasOldModel := false
+
+	oldModel, err := s.repository.Find(ctx, labelTemplateID)
+	if err != nil {
+		if !errors.Is(err, pgx.ErrNoRows) {
+			return err
+		}
+	} else {
+		hasOldModel = true
+
+		if oldModel.Status != LabelTemplateStatusDeleted {
+			return ErrLabelTemplateAlreadyCreated
+		}
+	}
+
 	model := LabelTemplate{
 		ID:                              labelTemplateID,
+		Status:                          LabelTemplateStatusCreated,
+		UserID:                          userID,
 		ManufacturerOrganizationName:    manufacturer.OrganizationName,
 		ManufacturerOrganizationAddress: manufacturer.OrganizationAddress,
 		ManufacturerEmail:               manufacturer.Email,
 		ManufacturerSite:                manufacturer.Site,
 	}
 
-	err := s.validateManufacturer(manufacturer)
-	if err != nil {
-		return err
+	if hasOldModel {
+		err = s.repository.Update(ctx, model)
+	} else {
+		err = s.repository.Insert(ctx, model)
 	}
 
-	err = s.repository.Insert(ctx, model)
 	if err != nil {
 		if strings.Contains(err.Error(), "duplicate key value violates unique constraint \"label_templates_pkey\"") {
 			return ErrLabelTemplateAlreadyCreated
@@ -75,9 +99,7 @@ func (s Service) Create(ctx context.Context, labelTemplateID string,
 		return err
 	}
 
-	action := contract.LabelTemplateHistoryRowActionCreated
-
-	err = s.createHistory(ctx, labelTemplateID, manufacturer, action)
+	err = s.createHistory(ctx, labelTemplateID, manufacturer, contract.LabelTemplateHistoryRowActionCreated)
 	if err != nil {
 		return err
 	}
@@ -85,17 +107,28 @@ func (s Service) Create(ctx context.Context, labelTemplateID string,
 	return nil
 }
 
-func (s Service) Update(ctx context.Context, labelTemplateID string,
+func (s Service) Update(ctx context.Context, userID, labelTemplateID string,
 	manufacturer contract.Manufacturer) error {
-	model := LabelTemplate{
+	model, err := s.repository.Find(ctx, labelTemplateID)
+	if err != nil {
+		return err
+	}
+
+	err = checkLabelTemplateUser(userID, model)
+	if err != nil {
+		return err
+	}
+
+	model = LabelTemplate{
 		ID:                              labelTemplateID,
+		UserID:                          userID,
 		ManufacturerOrganizationName:    manufacturer.OrganizationName,
 		ManufacturerOrganizationAddress: manufacturer.OrganizationAddress,
 		ManufacturerEmail:               manufacturer.Email,
 		ManufacturerSite:                manufacturer.Site,
 	}
 
-	err := s.validateManufacturer(manufacturer)
+	err = s.validateManufacturer(manufacturer)
 	if err != nil {
 		return err
 	}
@@ -115,8 +148,13 @@ func (s Service) Update(ctx context.Context, labelTemplateID string,
 	return nil
 }
 
-func (s Service) Get(ctx context.Context, labelTemplateID string) (contract.LabelTemplate, error) {
+func (s Service) Get(ctx context.Context, userID, labelTemplateID string) (contract.LabelTemplate, error) {
 	model, err := s.repository.Find(ctx, labelTemplateID)
+	if err != nil {
+		return contract.LabelTemplate{}, err
+	}
+
+	err = checkLabelTemplateUser(userID, model)
 	if err != nil {
 		return contract.LabelTemplate{}, err
 	}
@@ -134,13 +172,25 @@ func (s Service) Get(ctx context.Context, labelTemplateID string) (contract.Labe
 	return response, nil
 }
 
-func (s Service) Delete(ctx context.Context, labelTemplateID string) error {
-	err := s.repository.Delete(ctx, labelTemplateID)
+func (s Service) Delete(ctx context.Context, userID, labelTemplateID string) error {
+	model, err := s.repository.Find(ctx, labelTemplateID)
 	if err != nil {
-		if errors.Is(err, ErrCouldNotDelete) {
-			return ErrLabelTemplateAlreadyDeleted
-		}
+		return err
+	}
 
+	if model.Status == LabelTemplateStatusDeleted {
+		return ErrLabelTemplateAlreadyDeleted
+	}
+
+	err = checkLabelTemplateUser(userID, model)
+	if err != nil {
+		return err
+	}
+
+	model.Status = LabelTemplateStatusDeleted
+
+	err = s.repository.Update(ctx, model)
+	if err != nil {
 		return err
 	}
 
@@ -155,7 +205,22 @@ func (s Service) Delete(ctx context.Context, labelTemplateID string) error {
 	return nil
 }
 
-func (s Service) HistoryList(ctx context.Context, labelTemplateID string) ([]contract.LabelTemplateHistoryRow, error) {
+func (s Service) HistoryList(ctx context.Context, userID,
+	labelTemplateID string) ([]contract.LabelTemplateHistoryRow, error) {
+	model, err := s.repository.Find(ctx, labelTemplateID)
+	if err != nil {
+		if !errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+
+		return nil, err
+	}
+
+	err = checkLabelTemplateUser(userID, model)
+	if err != nil {
+		return nil, err
+	}
+
 	historyList, err := s.historyRepository.FindAll(ctx, labelTemplateID)
 	if err != nil {
 		return nil, err
@@ -189,98 +254,29 @@ func (s Service) HistoryList(ctx context.Context, labelTemplateID string) ([]con
 	return result, nil
 }
 
-func (s Service) AddCategoryList(ctx context.Context, labelTemplateID string, categoryList []contract.Category) error {
-	vsCategoryModelList, err := createVsCategoryModelList(categoryList, labelTemplateID)
-	if err != nil {
-		return err
-	}
-
-	for _, vsCategoryModel := range vsCategoryModelList {
-		err := s.vsCategoryRepository.Create(ctx, vsCategoryModel)
-		if err != nil {
-			return err
-		}
-
-		model := CategoryIDVsLabelTemplateID{
-			LabelTemplateID: labelTemplateID,
-			CategoryID:      vsCategoryModel.CategoryID,
-			TypeID:          vsCategoryModel.TypeID,
-		}
-
-		err = s.categoryVsLabelTemplateRepository.Create(ctx, model)
-		if err != nil {
-			return err
-		}
-	}
-
-	serviceCategoryList, err := mapHistoryCategoryToService(categoryList)
-	if err != nil {
-		return err
-	}
-
-	err = s.historyRepository.Create(ctx, LabelTemplateHistory{
-		LabelTemplateID: labelTemplateID,
-		Action:          contract.LabelTemplateHistoryRowActionCategoryListAdded,
-		CategoryList:    serviceCategoryList,
-	}, 0)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (s Service) UnlinkCategoryList(ctx context.Context, labelTemplateID string,
+func (s Service) AddCategoryList(ctx context.Context, userID, labelTemplateID string,
 	categoryList []contract.Category) error {
-	vsCategoryModelList, err := createVsCategoryModelList(categoryList, labelTemplateID)
-	if err != nil {
-		return err
-	}
+	action := contract.LabelTemplateHistoryRowActionCategoryListAdded
 
-	for _, vsCategoryModel := range vsCategoryModelList {
-		err := s.vsCategoryRepository.Delete(ctx, vsCategoryModel)
-		if err != nil {
-			return err
-		}
-
-		model := CategoryIDVsLabelTemplateID{
-			LabelTemplateID: labelTemplateID,
-			CategoryID:      vsCategoryModel.CategoryID,
-			TypeID:          vsCategoryModel.TypeID,
-		}
-
-		err = s.categoryVsLabelTemplateRepository.Delete(ctx, model)
-		if err != nil {
-			return err
-		}
-	}
-
-	serviceCategoryList, err := mapHistoryCategoryToService(categoryList)
-	if err != nil {
-		return err
-	}
-
-	err = s.historyRepository.Create(ctx, LabelTemplateHistory{
-		LabelTemplateID: labelTemplateID,
-		Action:          contract.LabelTemplateHistoryRowActionCategoryListUnlinked,
-		CategoryList:    serviceCategoryList,
-	}, 0)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return s.editCategoryList(ctx, userID, labelTemplateID, categoryList, true, action)
 }
 
-func (s Service) Deactivate(ctx context.Context, labelTemplateID string) error {
-	return s.changeLabelTemplateActivity(ctx, labelTemplateID, false)
+func (s Service) UnlinkCategoryList(ctx context.Context, userID, labelTemplateID string,
+	categoryList []contract.Category) error {
+	action := contract.LabelTemplateHistoryRowActionCategoryListUnlinked
+
+	return s.editCategoryList(ctx, userID, labelTemplateID, categoryList, false, action)
 }
 
-func (s Service) Activate(ctx context.Context, labelTemplateID string) error {
-	return s.changeLabelTemplateActivity(ctx, labelTemplateID, true)
+func (s Service) Deactivate(ctx context.Context, userID, labelTemplateID string) error {
+	return s.changeLabelTemplateActivity(ctx, userID, labelTemplateID, false)
 }
 
-func (s Service) StartLabelGeneration(ctx context.Context, labelID string, sku int64) error {
+func (s Service) Activate(ctx context.Context, userID, labelTemplateID string) error {
+	return s.changeLabelTemplateActivity(ctx, userID, labelTemplateID, true)
+}
+
+func (s Service) StartLabelGeneration(ctx context.Context, userID, labelID string, sku int64) error {
 	err := s.labelRepository.Exists(ctx, labelID)
 	if err != nil {
 		return err
@@ -288,6 +284,7 @@ func (s Service) StartLabelGeneration(ctx context.Context, labelID string, sku i
 
 	label := Label{
 		ID:     labelID,
+		UserID: userID,
 		SKU:    sku,
 		Status: contract.LabelGenerationStatusGeneration,
 	}
@@ -300,8 +297,13 @@ func (s Service) StartLabelGeneration(ctx context.Context, labelID string, sku i
 	return nil
 }
 
-func (s Service) LabelGeneration(ctx context.Context, id string) (contract.LabelGeneration, error) {
+func (s Service) LabelGeneration(ctx context.Context, userID, id string) (contract.LabelGeneration, error) {
 	label, err := s.labelRepository.Get(ctx, id)
+	if err != nil {
+		return contract.LabelGeneration{}, err
+	}
+
+	err = checkLabelUser(userID, label)
 	if err != nil {
 		return contract.LabelGeneration{}, err
 	}
@@ -312,8 +314,13 @@ func (s Service) LabelGeneration(ctx context.Context, id string) (contract.Label
 	}, nil
 }
 
-func (s Service) FillLabelGeneration(ctx context.Context, generationID string) error {
+func (s Service) FillLabelGeneration(ctx context.Context, userID, generationID string) error {
 	label, err := s.labelRepository.Get(ctx, generationID)
+	if err != nil {
+		return err
+	}
+
+	err = checkLabelUser(userID, label)
 	if err != nil {
 		return err
 	}
@@ -349,8 +356,13 @@ func (s Service) FillLabelGeneration(ctx context.Context, generationID string) e
 	return nil
 }
 
-func (s Service) GenerateLabel(ctx context.Context, generationID string) error {
+func (s Service) GenerateLabel(ctx context.Context, userID, generationID string) error {
 	label, err := s.labelRepository.Get(ctx, generationID)
+	if err != nil {
+		return err
+	}
+
+	err = checkLabelUser(userID, label)
 	if err != nil {
 		return err
 	}
@@ -395,7 +407,8 @@ func (s Service) GenerateLabel(ctx context.Context, generationID string) error {
 	return nil
 }
 
-func (s Service) Cleanup(ctx context.Context, labelTemplateID string) error {
+func (s Service) Cleanup(ctx context.Context, userID, labelTemplateID string) error {
+	_ = userID
 	_ = s.repository.Delete(ctx, labelTemplateID)
 	_ = s.historyRepository.Delete(ctx, labelTemplateID)
 	_ = s.vsCategoryRepository.DeleteByLabelTemplateID(ctx, labelTemplateID)
@@ -405,8 +418,13 @@ func (s Service) Cleanup(ctx context.Context, labelTemplateID string) error {
 	return nil
 }
 
-func (s Service) changeLabelTemplateActivity(ctx context.Context, labelTemplateID string, isActive bool) error {
+func (s Service) changeLabelTemplateActivity(ctx context.Context, userID, labelTemplateID string, isActive bool) error {
 	model, err := s.repository.Find(ctx, labelTemplateID)
+	if err != nil {
+		return err
+	}
+
+	err = checkLabelTemplateUser(userID, model)
 	if err != nil {
 		return err
 	}
@@ -428,6 +446,73 @@ func (s Service) changeLabelTemplateActivity(ctx context.Context, labelTemplateI
 	err = s.historyRepository.Create(ctx, LabelTemplateHistory{
 		LabelTemplateID: labelTemplateID,
 		Action:          action,
+	}, 0)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s Service) editCategoryList(ctx context.Context, userID string, labelTemplateID string,
+	categoryList []contract.Category, isAdd bool, action contract.LabelTemplateHistoryRowAction) error {
+	model, err := s.repository.Find(ctx, labelTemplateID)
+	if err != nil {
+		return err
+	}
+
+	err = checkLabelTemplateUser(userID, model)
+	if err != nil {
+		return err
+	}
+
+	vsCategoryModelList, err := createVsCategoryModelList(categoryList, labelTemplateID)
+	if err != nil {
+		return err
+	}
+
+	for _, vsCategoryModel := range vsCategoryModelList {
+		if isAdd {
+			err = s.vsCategoryRepository.Create(ctx, vsCategoryModel)
+		} else {
+			err = s.vsCategoryRepository.Delete(ctx, vsCategoryModel)
+		}
+
+		if err != nil {
+			return err
+		}
+
+		model := CategoryIDVsLabelTemplateID{
+			LabelTemplateID: labelTemplateID,
+			CategoryID:      vsCategoryModel.CategoryID,
+			TypeID:          vsCategoryModel.TypeID,
+		}
+
+		if isAdd {
+			err = s.categoryVsLabelTemplateRepository.Create(ctx, model)
+		} else {
+			err = s.categoryVsLabelTemplateRepository.Delete(ctx, model)
+		}
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return s.createHistoryForCategoryList(ctx, categoryList, labelTemplateID, action)
+}
+
+func (s Service) createHistoryForCategoryList(ctx context.Context, categoryList []contract.Category,
+	labelTemplateID string, action contract.LabelTemplateHistoryRowAction) error {
+	serviceCategoryList, err := mapHistoryCategoryToService(categoryList)
+	if err != nil {
+		return err
+	}
+
+	err = s.historyRepository.Create(ctx, LabelTemplateHistory{
+		LabelTemplateID: labelTemplateID,
+		Action:          action,
+		CategoryList:    serviceCategoryList,
 	}, 0)
 	if err != nil {
 		return err
@@ -563,6 +648,22 @@ func (s Service) createHistory(ctx context.Context, labelTemplateID string, manu
 	}, 0)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func checkLabelUser(userID string, label Label) error {
+	if label.UserID != userID {
+		return contract.ErrLabelWrongUser
+	}
+
+	return nil
+}
+
+func checkLabelTemplateUser(userID string, label LabelTemplate) error {
+	if label.UserID != userID {
+		return contract.ErrLabelTemplateWrongUser
 	}
 
 	return nil

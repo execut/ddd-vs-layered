@@ -49,12 +49,12 @@ func (r LabelRepository) Exists(ctx context.Context, id string) error {
 func (r LabelRepository) Get(ctx context.Context, generationID string) (Label, error) {
 	sql := `SELECT label_template_id, sku, status, product_name, manufacturer_organization_name,
             manufacturer_organization_address, manufacturer_email, manufacturer_site,
-            file FROM label WHERE id = $1`
+            file, user_id FROM label WHERE id = $1`
 	model := Label{}
 
 	err := r.conn.QueryRow(ctx, sql, generationID).Scan(&model.LabelTemplateID, &model.SKU,
 		&model.Status, &model.ProductName, &model.ManufacturerOrganizationName, &model.ManufacturerOrganizationAddress,
-		&model.ManufacturerEmail, &model.ManufacturerSite, &model.File)
+		&model.ManufacturerEmail, &model.ManufacturerSite, &model.File, &model.UserID)
 	if err != nil {
 		return Label{}, err
 	}
@@ -66,11 +66,11 @@ func (r LabelRepository) Get(ctx context.Context, generationID string) (Label, e
 
 func (r LabelRepository) Create(ctx context.Context, model Label) error {
 	sql := `
-       INSERT INTO label (id, sku, status)
-       VALUES ($1, $2, $3)
+       INSERT INTO label (id, sku, status, user_id)
+       VALUES ($1, $2, $3, $4)
    `
 
-	result, err := r.conn.Exec(ctx, sql, model.ID, model.SKU, model.Status)
+	result, err := r.conn.Exec(ctx, sql, model.ID, model.SKU, model.Status, model.UserID)
 	if err != nil {
 		const duplicateKeyErr = "duplicate key value violates unique constraint"
 		if strings.Contains(err.Error(), duplicateKeyErr) {
