@@ -12,7 +12,8 @@ var _ contract.IApplication = (*Application)(nil)
 
 func NewApplication(ctx context.Context,
 	externalServiceOzon external.IExternalServiceOzon,
-	externalGenerator external.ILabelGenerator) (*service.Service, error) {
+	externalGenerator external.ILabelGenerator, analytics external.IAnalytics) (*service.Service, error) {
+	_ = analytics
 	repository, err := service.NewRepository(ctx)
 	if err != nil {
 		return nil, err

@@ -8,18 +8,22 @@ import (
 var ErrLabelTemplateWrongUser = errors.New("нельзя редактировать чужие записи")
 var ErrLabelWrongUser = errors.New("нельзя редактировать чужие записи")
 
-type IApplication interface {
+type IApplication interface { //nolint:interfacebloat
 	Create(ctx context.Context, userID string, labelTemplateID string, manufacturer Manufacturer) error
 	Get(ctx context.Context, userID string, labelTemplateID string) (LabelTemplate, error)
 	Delete(ctx context.Context, userID string, labelTemplateID string) error
 	Update(ctx context.Context, userID string, labelTemplateID string, manufacturer Manufacturer) error
 	HistoryList(ctx context.Context, userID string, labelTemplateID string) ([]LabelTemplateHistoryRow, error)
 	AddCategoryList(ctx context.Context, userID string, labelTemplateID string, categoryList []Category) error
+	UnlinkCategoryList(ctx context.Context, userID string, labelTemplateID string, categoryList []Category) error
+	Deactivate(ctx context.Context, userID string, labelTemplateID string) error
+	Activate(ctx context.Context, userID string, labelTemplateID string) error
 	Cleanup(ctx context.Context, userID string, labelTemplateID string) error
 
 	StartLabelGeneration(ctx context.Context, userID string, generationID string, sku int64) error
 	LabelGeneration(ctx context.Context, userID string, generationID string) (LabelGeneration, error)
 	FillLabelGeneration(ctx context.Context, userID string, generationID string) error
+	GenerateLabel(ctx context.Context, userID string, generationID string) error
 }
 
 type LabelTemplateHistoryList struct {
