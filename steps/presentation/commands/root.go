@@ -49,6 +49,7 @@ func Execute() error {
 	}
 
 	rootCmd.PersistentFlags().StringVarP(&labelTemplateID, "id", "i", "", "id")
+
 	userID = os.Getenv("USER_ID")
 
 	err = rootCmd.Execute()

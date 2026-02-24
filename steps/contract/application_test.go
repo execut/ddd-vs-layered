@@ -17,6 +17,7 @@ const (
 	expectedTemplateID                                = "123e4567-e89b-12d3-a456-426655440001"
 	expectedLabelGenerationID                         = "223e4567-e89b-12d3-a456-426655440001"
 	expectedUserID                                    = "323e4567-e89b-12d3-a456-426655440001"
+	expectedBadUserID                                 = "423e4567-e89b-12d3-a456-426655440001"
 	expectedManufacturerOrganizationName              = "test manufacturer organization name"
 	expectedManufacturerOrganizationAddress           = "test manufacturer organization address"
 	expectedManufacturerEmail                         = "test@test.com"
@@ -72,6 +73,11 @@ func TestLabelTemplate_Live(t *testing.T) {
 				OrganizationName: expectedManufacturerOrganizationName,
 			},
 		}, result)
+	})
+	t.Run("20. Чтобы нельзя было работать с чужими записями", func(t *testing.T) {
+		_, err := app.Get(t.Context(), expectedBadUserID, expectedTemplateID)
+
+		require.ErrorIs(t, err, contract.ErrLabelTemplateWrongUser)
 	})
 	t.Run("4. Чтобы возвращалась уникальная ошибка при попытке создать уже существующий шаблон", func(t *testing.T) {
 		err := app.Create(t.Context(), expectedUserID, expectedTemplateID, contract.Manufacturer{
@@ -374,6 +380,12 @@ func TestLabelTemplate_Live(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, contract.LabelGenerationStatusGeneration, response.Status)
+	})
+
+	t.Run("20. Чтобы нельзя было работать с чужими записями", func(t *testing.T) {
+		_, err := app.LabelGeneration(t.Context(), expectedBadUserID, expectedLabelGenerationID)
+
+		require.ErrorIs(t, err, contract.ErrLabelWrongUser)
 	})
 
 	t.Run("17. При наполнении этикетки данными должен выставляться статус ошибка с сообщением", func(t *testing.T) {

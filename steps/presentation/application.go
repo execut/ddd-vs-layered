@@ -62,7 +62,8 @@ func NewApplication(ctx context.Context,
 	return app, nil
 }
 
-func (a *Application) Create(ctx context.Context, userID string, labelTemplateID string, manufacturer contract.Manufacturer) error {
+func (a *Application) Create(ctx context.Context, userID string, labelTemplateID string,
+	manufacturer contract.Manufacturer) error {
 	_ = ctx
 	_ = userID
 	_ = labelTemplateID
@@ -87,7 +88,8 @@ func (a *Application) Delete(ctx context.Context, userID string, labelTemplateID
 	return nil
 }
 
-func (a *Application) Update(ctx context.Context, userID string, labelTemplateID string, manufacturer contract.Manufacturer) error {
+func (a *Application) Update(ctx context.Context, userID string, labelTemplateID string,
+	manufacturer contract.Manufacturer) error {
 	_ = ctx
 	_ = userID
 	_ = labelTemplateID
@@ -159,7 +161,8 @@ func (a *Application) StartLabelGeneration(ctx context.Context, userID string, g
 	return nil
 }
 
-func (a *Application) LabelGeneration(ctx context.Context, userID string, generationID string) (contract.LabelGeneration, error) {
+func (a *Application) LabelGeneration(ctx context.Context, userID string,
+	generationID string) (contract.LabelGeneration, error) {
 	_ = ctx
 	_ = userID
 	_ = generationID
