@@ -36,7 +36,8 @@ var (
 func Execute() error {
 	ctx := context.Background()
 
-	app, err := presentation.NewApplication(ctx, external.NewServiceOzon(), external.NewLabelGenerator())
+	app, err := presentation.NewApplication(ctx, external.NewServiceOzon(), external.NewLabelGenerator(),
+		external.NewAnalytics())
 	if err != nil {
 		panic(err)
 	}
