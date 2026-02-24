@@ -62,116 +62,122 @@ func NewApplication(ctx context.Context,
 	return app, nil
 }
 
-func (a *Application) Create(ctx context.Context, labelTemplateID string, manufacturer contract.Manufacturer) error {
+func (a *Application) Create(ctx context.Context, userID string, labelTemplateID string, manufacturer contract.Manufacturer) error {
 	_ = ctx
+	_ = userID
 	_ = labelTemplateID
 	_ = manufacturer
 
 	return nil
 }
 
-func (a *Application) Get(ctx context.Context, labelTemplateID string) (contract.LabelTemplate, error) {
+func (a *Application) Get(ctx context.Context, userID string, labelTemplateID string) (contract.LabelTemplate, error) {
 	_ = ctx
+	_ = userID
 	_ = labelTemplateID
 
 	return contract.LabelTemplate{}, nil
 }
 
-func (a *Application) Delete(ctx context.Context, labelTemplateID string) error {
+func (a *Application) Delete(ctx context.Context, userID string, labelTemplateID string) error {
 	_ = ctx
+	_ = userID
 	_ = labelTemplateID
 
 	return nil
 }
 
-func (a *Application) Update(ctx context.Context, labelTemplateID string, manufacturer contract.Manufacturer) error {
+func (a *Application) Update(ctx context.Context, userID string, labelTemplateID string, manufacturer contract.Manufacturer) error {
 	_ = ctx
+	_ = userID
 	_ = labelTemplateID
 	_ = manufacturer
 
 	return nil
 }
 
-func (a *Application) Deactivate(ctx context.Context, labelTemplateID string) error {
+func (a *Application) Deactivate(ctx context.Context, userID string, labelTemplateID string) error {
 	_ = ctx
+	_ = userID
 	_ = labelTemplateID
 
 	return nil
 }
 
-func (a *Application) Activate(ctx context.Context, labelTemplateID string) error {
+func (a *Application) Activate(ctx context.Context, userID string, labelTemplateID string) error {
 	_ = ctx
+	_ = userID
 	_ = labelTemplateID
 
 	return nil
 }
 
 func (a *Application) HistoryList(
-	ctx context.Context,
+	ctx context.Context, userID string,
 	labelTemplateID string) ([]contract.LabelTemplateHistoryRow, error) {
 	_ = ctx
+	_ = userID
 	_ = labelTemplateID
 
 	return []contract.LabelTemplateHistoryRow{}, nil
 }
 
-func (a *Application) AddCategoryList(ctx context.Context, labelTemplateID string,
+func (a *Application) AddCategoryList(ctx context.Context, userID string, labelTemplateID string,
 	categoryList []contract.Category) error {
 	_ = ctx
+	_ = userID
 	_ = labelTemplateID
 	_ = categoryList
 
 	return nil
 }
 
-func (a *Application) UnlinkCategoryList(ctx context.Context, labelTemplateID string,
+func (a *Application) UnlinkCategoryList(ctx context.Context, userID string, labelTemplateID string,
 	categoryList []contract.Category) error {
 	_ = ctx
+	_ = userID
 	_ = labelTemplateID
 	_ = categoryList
 
 	return nil
 }
 
-func (a *Application) Cleanup(ctx context.Context, labelTemplateID string) error {
+func (a *Application) Cleanup(ctx context.Context, userID string, labelTemplateID string) error {
 	_ = ctx
+	_ = userID
 	_ = labelTemplateID
 
 	return nil
 }
 
-func (a *Application) IDByCategoryWithType(ctx context.Context,
-	categoryWithType contract.CategoryWithType) (string, error) {
+func (a *Application) StartLabelGeneration(ctx context.Context, userID string, generationID string, sku int64) error {
 	_ = ctx
-	_ = categoryWithType
-
-	return "", nil
-}
-
-func (a *Application) StartLabelGeneration(ctx context.Context, generationID string, sku int64) error {
-	_ = ctx
+	_ = userID
 	_ = generationID
 	_ = sku
 
 	return nil
 }
 
-func (a *Application) LabelGeneration(ctx context.Context, generationID string) (contract.LabelGeneration, error) {
+func (a *Application) LabelGeneration(ctx context.Context, userID string, generationID string) (contract.LabelGeneration, error) {
 	_ = ctx
+	_ = userID
 	_ = generationID
 
 	return contract.LabelGeneration{}, nil
 }
 
-func (a *Application) FillLabelGeneration(ctx context.Context, generationID string) error {
+func (a *Application) FillLabelGeneration(ctx context.Context, userID string, generationID string) error {
 	_ = ctx
+	_ = userID
 	_ = generationID
 
 	return nil
 }
 
-func (a *Application) GenerateLabel(ctx context.Context, generationID string) error {
+func (a *Application) GenerateLabel(ctx context.Context, userID string, generationID string) error {
 	_ = ctx
+	_ = userID
 	_ = generationID
 
 	return nil

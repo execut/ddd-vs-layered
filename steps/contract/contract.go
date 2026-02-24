@@ -5,17 +5,17 @@ import (
 )
 
 type IApplication interface {
-	Create(ctx context.Context, labelTemplateID string, manufacturer Manufacturer) error
-	Get(ctx context.Context, labelTemplateID string) (LabelTemplate, error)
-	Delete(ctx context.Context, labelTemplateID string) error
-	Update(ctx context.Context, labelTemplateID string, manufacturer Manufacturer) error
-	HistoryList(ctx context.Context, labelTemplateID string) ([]LabelTemplateHistoryRow, error)
-	AddCategoryList(ctx context.Context, labelTemplateID string, categoryList []Category) error
-	Cleanup(ctx context.Context, labelTemplateID string) error
+	Create(ctx context.Context, userID string, labelTemplateID string, manufacturer Manufacturer) error
+	Get(ctx context.Context, userID string, labelTemplateID string) (LabelTemplate, error)
+	Delete(ctx context.Context, userID string, labelTemplateID string) error
+	Update(ctx context.Context, userID string, labelTemplateID string, manufacturer Manufacturer) error
+	HistoryList(ctx context.Context, userID string, labelTemplateID string) ([]LabelTemplateHistoryRow, error)
+	AddCategoryList(ctx context.Context, userID string, labelTemplateID string, categoryList []Category) error
+	Cleanup(ctx context.Context, userID string, labelTemplateID string) error
 
-	StartLabelGeneration(ctx context.Context, generationID string, sku int64) error
-	LabelGeneration(ctx context.Context, generationID string) (LabelGeneration, error)
-	FillLabelGeneration(ctx context.Context, generationID string) error
+	StartLabelGeneration(ctx context.Context, userID string, generationID string, sku int64) error
+	LabelGeneration(ctx context.Context, userID string, generationID string) (LabelGeneration, error)
+	FillLabelGeneration(ctx context.Context, userID string, generationID string) error
 }
 
 type LabelTemplateHistoryList struct {
