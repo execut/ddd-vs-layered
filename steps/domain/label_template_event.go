@@ -3,20 +3,26 @@ package domain
 type LabelTemplateEvent any
 
 type LabelTemplateCreatedEvent struct {
-    Manufacturer Manufacturer
+	Manufacturer Manufacturer
 }
 
 type LabelTemplateUpdatedEvent struct {
-    Manufacturer Manufacturer
+	Manufacturer Manufacturer
 }
 
 type LabelTemplateDeletedEvent struct {
 }
 
+type LabelTemplateActivatedEvent struct {
+}
+
+type LabelTemplateDeactivatedEvent struct {
+}
+
 type LabelTemplateCategoryListAddedEvent struct {
-    CategoryList []Category
+	CategoryList []Category
 }
 
 type LabelTemplateCategoryListUnlinkedEvent struct {
-    CategoryList []Category
+	CategoryList []Category
 }
