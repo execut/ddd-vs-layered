@@ -4,6 +4,7 @@ type LabelTemplateEvent any
 
 type LabelTemplateCreatedEvent struct {
 	Manufacturer Manufacturer
+	UserID       string
 }
 
 type LabelTemplateUpdatedEvent struct {

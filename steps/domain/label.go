@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"effective-architecture/steps/contract"
 	"errors"
 )
 
@@ -9,10 +10,12 @@ var (
 	ErrLabelTemplateForCategoryNotFound = errors.New("шаблон этикетки для SKU не найден")
 	ErrLabelAlreadyExists               = errors.New("генерация этикетки с таким идентификатором уже существует")
 	ErrUnsupportedEventType             = errors.New("unsupported event type")
+	ErrLabelWrongUser                   = contract.ErrLabelWrongUser
 )
 
 type Label struct {
 	ID           LabelID
+	UserID       string
 	Status       LabelStatus
 	TemplateID   LabelTemplateID
 	SKU          int64
@@ -36,13 +39,14 @@ func NewLabel(id LabelID, ozonService IServiceOzon, labelRepository IRepository,
 	}
 }
 
-func (l *Label) StartGeneration(sku int64) error {
+func (l *Label) StartGeneration(userID string, sku int64) error {
 	if l.Status == LabelStatusGeneration {
 		return ErrLabelAlreadyExists
 	}
 
 	err := l.addAndApplyEvent(LabelGenerationStartedEvent{
-		SKU: sku,
+		UserID: userID,
+		SKU:    sku,
 	})
 	if err != nil {
 		return err
@@ -51,7 +55,12 @@ func (l *Label) StartGeneration(sku int64) error {
 	return nil
 }
 
-func (l *Label) FillData(ctx context.Context) error {
+func (l *Label) FillData(ctx context.Context, userID string) error {
+	err := l.checkUser(userID)
+	if err != nil {
+		return err
+	}
+
 	categoryList, product, err := l.ozonService.ProductData(ctx, l.SKU)
 	if err != nil {
 		return err
@@ -78,7 +87,12 @@ func (l *Label) FillData(ctx context.Context) error {
 	return nil
 }
 
-func (l *Label) Generate(ctx context.Context) error {
+func (l *Label) Generate(ctx context.Context, userID string) error {
+	err := l.checkUser(userID)
+	if err != nil {
+		return err
+	}
+
 	labelFile, err := l.labelGenerator.Generate(ctx, l.Product, l.Manufacturer, l.SKU)
 	if err != nil {
 		return err
@@ -97,6 +111,7 @@ func (l *Label) Generate(ctx context.Context) error {
 func (l *Label) ApplyEvent(event LabelEvent) error {
 	switch payload := event.(type) {
 	case LabelGenerationStartedEvent:
+		l.UserID = payload.UserID
 		l.Status = LabelStatusGeneration
 		l.SKU = payload.SKU
 	case LabelDataFilledEvent:
@@ -120,6 +135,14 @@ func (l *Label) addAndApplyEvent(event LabelEvent) error {
 	err := l.ApplyEvent(event)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (l *Label) checkUser(userID string) error {
+	if userID != l.UserID {
+		return ErrLabelWrongUser
 	}
 
 	return nil

@@ -39,7 +39,7 @@ func NewApplication(repository domain.IRepository,
 	}, nil
 }
 
-func (a *Application) Create(ctx context.Context, id string, manufacturer contract.Manufacturer) error {
+func (a *Application) Create(ctx context.Context, userID string, id string, manufacturer contract.Manufacturer) error {
 	domainLabel, err := a.loadLabelTemplate(ctx, id)
 	if err != nil {
 		return err
@@ -50,7 +50,7 @@ func (a *Application) Create(ctx context.Context, id string, manufacturer contra
 		return err
 	}
 
-	err = domainLabel.Create(domainManufacturer)
+	err = domainLabel.Create(userID, domainManufacturer)
 	if err != nil {
 		return err
 	}
@@ -68,10 +68,14 @@ func (a *Application) Create(ctx context.Context, id string, manufacturer contra
 	return nil
 }
 
-func (a *Application) Get(ctx context.Context, id string) (contract.LabelTemplate, error) {
+func (a *Application) Get(ctx context.Context, userID string, id string) (contract.LabelTemplate, error) {
 	domainLabel, err := a.loadLabelTemplate(ctx, id)
 	if err != nil {
 		return contract.LabelTemplate{}, err
+	}
+
+	if userID != domainLabel.UserID {
+		return contract.LabelTemplate{}, contract.ErrLabelTemplateWrongUser
 	}
 
 	response := mapManufacturerToResponse(domainLabel.Manufacturer)
@@ -83,13 +87,13 @@ func (a *Application) Get(ctx context.Context, id string) (contract.LabelTemplat
 	return responseObj, nil
 }
 
-func (a *Application) Delete(ctx context.Context, id string) error {
+func (a *Application) Delete(ctx context.Context, userID string, id string) error {
 	domainLabel, err := a.loadLabelTemplate(ctx, id)
 	if err != nil {
 		return err
 	}
 
-	err = domainLabel.Delete()
+	err = domainLabel.Delete(userID)
 	if err != nil {
 		return err
 	}
@@ -107,7 +111,8 @@ func (a *Application) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (a *Application) Update(ctx context.Context, uuid string, manufacturer contract.Manufacturer) error {
+func (a *Application) Update(ctx context.Context, userID string, uuid string,
+	manufacturer contract.Manufacturer) error {
 	domainLabel, err := a.loadLabelTemplate(ctx, uuid)
 	if err != nil {
 		return err
@@ -118,7 +123,7 @@ func (a *Application) Update(ctx context.Context, uuid string, manufacturer cont
 		return err
 	}
 
-	err = domainLabel.Update(domainManufacturer)
+	err = domainLabel.Update(userID, domainManufacturer)
 	if err != nil {
 		return err
 	}
@@ -136,8 +141,14 @@ func (a *Application) Update(ctx context.Context, uuid string, manufacturer cont
 	return nil
 }
 
-func (a *Application) HistoryList(ctx context.Context, id string) ([]contract.LabelTemplateHistoryRow, error) {
-	domainAggregateID, err := domain.NewLabelTemplateID(id)
+func (a *Application) HistoryList(ctx context.Context, userID string,
+	labelTemplateID string) ([]contract.LabelTemplateHistoryRow, error) {
+	err := a.checkLabelOwner(ctx, userID, labelTemplateID)
+	if err != nil {
+		return nil, err
+	}
+
+	domainAggregateID, err := domain.NewLabelTemplateID(labelTemplateID)
 	if err != nil {
 		return nil, err
 	}
@@ -147,60 +158,10 @@ func (a *Application) HistoryList(ctx context.Context, id string) ([]contract.La
 		return nil, err
 	}
 
-	result := make([]contract.LabelTemplateHistoryRow, 0, len(domainHistoryList))
-	for _, domainHistory := range domainHistoryList {
-		historyRow := contract.LabelTemplateHistoryRow{
-			OrderKey: domainHistory.OrderKey,
-			Action:   domainHistory.Action,
-		}
-
-		if domainHistory.NewManufacturerOrganizationName != nil {
-			historyRow.NewManufacturerOrganizationName = domainHistory.NewManufacturerOrganizationName.Name
-		}
-
-		if domainHistory.NewManufacturerOrganizationAddress != nil {
-			historyRow.NewManufacturerOrganizationAddress = domainHistory.NewManufacturerOrganizationAddress.Address
-		}
-
-		if domainHistory.NewManufacturerEmail != nil {
-			historyRow.NewManufacturerEmail = domainHistory.NewManufacturerEmail.Value
-		}
-
-		if domainHistory.NewManufacturerSite != nil {
-			historyRow.NewManufacturerSite = domainHistory.NewManufacturerSite.Value
-		}
-
-		categoryList := make([]contract.Category, 0, len(domainHistory.CategoryList))
-		for _, domainCategory := range domainHistory.CategoryList {
-			category := mapDomainCategoryToContract(domainCategory)
-			categoryList = append(categoryList, category)
-		}
-
-		if len(categoryList) > 0 {
-			historyRow.CategoryList = categoryList
-		}
-
-		result = append(result, historyRow)
-	}
-
-	return result, nil
+	return mapDomainHistoryToContract(domainHistoryList), nil
 }
 
-func mapDomainCategoryToContract(category domain.Category) contract.Category {
-	var typeID *string
-
-	if category.TypeID != nil {
-		typeIDValue := strconv.FormatInt(*category.TypeID, 10)
-		typeID = &typeIDValue
-	}
-
-	return contract.Category{
-		CategoryID: strconv.FormatInt(category.CategoryID, 10),
-		TypeID:     typeID,
-	}
-}
-
-func (a *Application) AddCategoryList(ctx context.Context, labelTemplateID string,
+func (a *Application) AddCategoryList(ctx context.Context, userID string, labelTemplateID string,
 	categoryList []contract.Category) error {
 	domainCategoryList, err := mapCategoryFromContractToDomain(categoryList)
 	if err != nil {
@@ -212,7 +173,7 @@ func (a *Application) AddCategoryList(ctx context.Context, labelTemplateID strin
 		return err
 	}
 
-	err = domainLabel.AddCategoryList(domainCategoryList)
+	err = domainLabel.AddCategoryList(userID, domainCategoryList)
 	if err != nil {
 		return err
 	}
@@ -230,7 +191,7 @@ func (a *Application) AddCategoryList(ctx context.Context, labelTemplateID strin
 	return nil
 }
 
-func (a *Application) UnlinkCategoryList(ctx context.Context, labelTemplateID string,
+func (a *Application) UnlinkCategoryList(ctx context.Context, userID string, labelTemplateID string,
 	categoryList []contract.Category) error {
 	domainCategoryList, err := mapCategoryFromContractToDomain(categoryList)
 	if err != nil {
@@ -242,7 +203,7 @@ func (a *Application) UnlinkCategoryList(ctx context.Context, labelTemplateID st
 		return err
 	}
 
-	err = domainLabel.UnlinkCategoryList(domainCategoryList)
+	err = domainLabel.UnlinkCategoryList(userID, domainCategoryList)
 	if err != nil {
 		return err
 	}
@@ -260,13 +221,13 @@ func (a *Application) UnlinkCategoryList(ctx context.Context, labelTemplateID st
 	return nil
 }
 
-func (a *Application) Deactivate(ctx context.Context, labelTemplateID string) error {
+func (a *Application) Deactivate(ctx context.Context, userID string, labelTemplateID string) error {
 	domainLabel, err := a.loadLabelTemplate(ctx, labelTemplateID)
 	if err != nil {
 		return err
 	}
 
-	err = domainLabel.Deactivate()
+	err = domainLabel.Deactivate(userID)
 	if err != nil {
 		return err
 	}
@@ -284,13 +245,13 @@ func (a *Application) Deactivate(ctx context.Context, labelTemplateID string) er
 	return nil
 }
 
-func (a *Application) Activate(ctx context.Context, labelTemplateID string) error {
+func (a *Application) Activate(ctx context.Context, userID string, labelTemplateID string) error {
 	domainLabel, err := a.loadLabelTemplate(ctx, labelTemplateID)
 	if err != nil {
 		return err
 	}
 
-	err = domainLabel.Activate()
+	err = domainLabel.Activate(userID)
 	if err != nil {
 		return err
 	}
@@ -308,13 +269,13 @@ func (a *Application) Activate(ctx context.Context, labelTemplateID string) erro
 	return nil
 }
 
-func (a *Application) StartLabelGeneration(ctx context.Context, id string, sku int64) error {
+func (a *Application) StartLabelGeneration(ctx context.Context, userID string, id string, sku int64) error {
 	label, err := a.loadLabelGeneration(ctx, id)
 	if err != nil {
 		return err
 	}
 
-	err = label.StartGeneration(sku)
+	err = label.StartGeneration(userID, sku)
 	if err != nil {
 		return err
 	}
@@ -327,10 +288,15 @@ func (a *Application) StartLabelGeneration(ctx context.Context, id string, sku i
 	return nil
 }
 
-func (a *Application) LabelGeneration(ctx context.Context, generationID string) (contract.LabelGeneration, error) {
+func (a *Application) LabelGeneration(ctx context.Context, userID string,
+	generationID string) (contract.LabelGeneration, error) {
 	aggregate, err := a.loadLabelGeneration(ctx, generationID)
 	if err != nil {
 		return contract.LabelGeneration{}, err
+	}
+
+	if aggregate.UserID != userID {
+		return contract.LabelGeneration{}, contract.ErrLabelWrongUser
 	}
 
 	var filePath *string
@@ -344,13 +310,13 @@ func (a *Application) LabelGeneration(ctx context.Context, generationID string) 
 	}, nil
 }
 
-func (a *Application) FillLabelGeneration(ctx context.Context, generationID string) error {
+func (a *Application) FillLabelGeneration(ctx context.Context, userID string, generationID string) error {
 	aggregate, err := a.loadLabelGeneration(ctx, generationID)
 	if err != nil {
 		return err
 	}
 
-	err = aggregate.FillData(ctx)
+	err = aggregate.FillData(ctx, userID)
 	if err != nil {
 		return err
 	}
@@ -363,13 +329,13 @@ func (a *Application) FillLabelGeneration(ctx context.Context, generationID stri
 	return nil
 }
 
-func (a *Application) GenerateLabel(ctx context.Context, generationID string) error {
+func (a *Application) GenerateLabel(ctx context.Context, userID string, generationID string) error {
 	aggregate, err := a.loadLabelGeneration(ctx, generationID)
 	if err != nil {
 		return err
 	}
 
-	err = aggregate.Generate(ctx)
+	err = aggregate.Generate(ctx, userID)
 	if err != nil {
 		return err
 	}
@@ -382,7 +348,9 @@ func (a *Application) GenerateLabel(ctx context.Context, generationID string) er
 	return nil
 }
 
-func (a *Application) Cleanup(ctx context.Context, id string) error {
+func (a *Application) Cleanup(ctx context.Context, userID string, id string) error {
+	_ = userID
+
 	domainID, err := domain.NewLabelTemplateID(id)
 	if err != nil {
 		return err
@@ -399,6 +367,33 @@ func (a *Application) Cleanup(ctx context.Context, id string) error {
 	}
 
 	return nil
+}
+
+func (a *Application) checkLabelOwner(ctx context.Context, userID string, id string) error {
+	domainLabel, err := a.loadLabelTemplate(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	if domainLabel.UserID != userID {
+		return contract.ErrLabelTemplateWrongUser
+	}
+
+	return err
+}
+
+func mapDomainCategoryToContract(category domain.Category) contract.Category {
+	var typeID *string
+
+	if category.TypeID != nil {
+		typeIDValue := strconv.FormatInt(*category.TypeID, 10)
+		typeID = &typeIDValue
+	}
+
+	return contract.Category{
+		CategoryID: strconv.FormatInt(category.CategoryID, 10),
+		TypeID:     typeID,
+	}
 }
 
 func (a *Application) loadLabelGeneration(ctx context.Context, id string) (*domain.Label, error) {
@@ -544,4 +539,44 @@ func mapManufacturerToResponse(domainManufacturer domain.Manufacturer) contract.
 	}
 
 	return manufacturer
+}
+
+func mapDomainHistoryToContract(domainHistoryList []history.History) []contract.LabelTemplateHistoryRow {
+	result := make([]contract.LabelTemplateHistoryRow, 0, len(domainHistoryList))
+	for _, domainHistory := range domainHistoryList {
+		historyRow := contract.LabelTemplateHistoryRow{
+			OrderKey: domainHistory.OrderKey,
+			Action:   domainHistory.Action,
+		}
+
+		if domainHistory.NewManufacturerOrganizationName != nil {
+			historyRow.NewManufacturerOrganizationName = domainHistory.NewManufacturerOrganizationName.Name
+		}
+
+		if domainHistory.NewManufacturerOrganizationAddress != nil {
+			historyRow.NewManufacturerOrganizationAddress = domainHistory.NewManufacturerOrganizationAddress.Address
+		}
+
+		if domainHistory.NewManufacturerEmail != nil {
+			historyRow.NewManufacturerEmail = domainHistory.NewManufacturerEmail.Value
+		}
+
+		if domainHistory.NewManufacturerSite != nil {
+			historyRow.NewManufacturerSite = domainHistory.NewManufacturerSite.Value
+		}
+
+		categoryList := make([]contract.Category, 0, len(domainHistory.CategoryList))
+		for _, domainCategory := range domainHistory.CategoryList {
+			category := mapDomainCategoryToContract(domainCategory)
+			categoryList = append(categoryList, category)
+		}
+
+		if len(categoryList) > 0 {
+			historyRow.CategoryList = categoryList
+		}
+
+		result = append(result, historyRow)
+	}
+
+	return result
 }

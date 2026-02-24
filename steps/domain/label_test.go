@@ -35,15 +35,21 @@ func TestLabel(t *testing.T) {
 	label := domain.NewLabel(expectedLabelID, ozonServiceMock, labelRepository, labelGeneratorMock)
 
 	t.Run("14. Начинать генерацию этикетки по SKU", func(t *testing.T) {
-		err := label.StartGeneration(expectedSKU)
+		err := label.StartGeneration(expectedUserID, expectedSKU)
 
 		require.NoError(t, err)
 
 		t.Run("или такая генерация уже была запущена", func(t *testing.T) {
-			err := label.StartGeneration(expectedSKU)
+			err := label.StartGeneration(expectedUserID, expectedSKU)
 
 			require.ErrorContains(t, err, "генерация этикетки с таким идентификатором уже существует")
 		})
+	})
+
+	t.Run("20. Чтобы нельзя было работать с чужими записями", func(t *testing.T) {
+		err := label.FillData(t.Context(), expectedOtherUserID)
+
+		require.ErrorIs(t, err, domain.ErrLabelWrongUser)
 	})
 
 	t.Run("16. Наполнять этикетку данными из внешнего API и вычислять по ним шаблон", func(t *testing.T) {
@@ -51,7 +57,7 @@ func TestLabel(t *testing.T) {
 			ozonServiceMock.EXPECT().ProductData(gomock.Any(), gomock.Any()).Return(nil, domain.Product{},
 				external.ErrSkuNotFound)
 
-			err := label.FillData(t.Context())
+			err := label.FillData(t.Context(), expectedUserID)
 
 			require.ErrorIs(t, err, external.ErrSkuNotFound)
 		})
@@ -60,7 +66,7 @@ func TestLabel(t *testing.T) {
 			ozonServiceMock.EXPECT().ProductData(gomock.Any(), gomock.Any()).Return(expectedCategoryList, domain.Product{}, nil)
 			labelRepository.EXPECT().LoadByCategoryList(t.Context(), expectedCategoryList).Return(nil, nil)
 
-			err := label.FillData(t.Context())
+			err := label.FillData(t.Context(), expectedUserID)
 
 			require.ErrorIs(t, err, domain.ErrLabelTemplateForCategoryNotFound)
 		})
@@ -74,7 +80,7 @@ func TestLabel(t *testing.T) {
 			Manufacturer: expectedManufacturer,
 		}, nil)
 
-		err := label.FillData(t.Context())
+		err := label.FillData(t.Context(), expectedUserID)
 
 		require.NoError(t, err)
 		assert.Equal(t, expectedLabelTemplateID, label.TemplateID)
@@ -86,7 +92,7 @@ func TestLabel(t *testing.T) {
 		labelGeneratorMock.EXPECT().Generate(t.Context(), expectedProduct, expectedManufacturer, expectedSKU).
 			Return(expectedLabelFile, nil)
 
-		err := label.Generate(t.Context())
+		err := label.Generate(t.Context(), expectedUserID)
 
 		require.NoError(t, err)
 		assert.Equal(t, domain.LabelStatusGenerated, label.Status)
