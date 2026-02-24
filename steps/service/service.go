@@ -36,12 +36,13 @@ type Service struct {
 	categoryVsLabelTemplateRepository *CategoryVsLabelTemplateRepository
 	labelRepository                   *LabelRepository
 	generatorService                  external.ILabelGenerator
+	analytics                         external.IAnalytics
 }
 
 func NewService(repository *Repository, historyRepository *HistoryRepository,
 	categoryRepository *VsCategoryRepository, ozonService external.IExternalServiceOzon,
 	categoryVsLabelTemplateRepository *CategoryVsLabelTemplateRepository, labelRepository *LabelRepository,
-	generatorService external.ILabelGenerator) *Service {
+	generatorService external.ILabelGenerator, analytics external.IAnalytics) *Service {
 	return &Service{
 		repository:                        repository,
 		historyRepository:                 historyRepository,
@@ -50,6 +51,7 @@ func NewService(repository *Repository, historyRepository *HistoryRepository,
 		categoryVsLabelTemplateRepository: categoryVsLabelTemplateRepository,
 		labelRepository:                   labelRepository,
 		generatorService:                  generatorService,
+		analytics:                         analytics,
 	}
 }
 
@@ -104,6 +106,11 @@ func (s Service) Create(ctx context.Context, userID, labelTemplateID string,
 		return err
 	}
 
+	err = s.analytics.Send(ctx, external.AnalyticsEventTypeCreated, model.UserID)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -141,6 +148,11 @@ func (s Service) Update(ctx context.Context, userID, labelTemplateID string,
 	action := contract.LabelTemplateHistoryRowActionUpdated
 
 	err = s.createHistory(ctx, labelTemplateID, manufacturer, action)
+	if err != nil {
+		return err
+	}
+
+	err = s.analytics.Send(ctx, external.AnalyticsEventTypeUpdated, model.UserID)
 	if err != nil {
 		return err
 	}
@@ -202,6 +214,11 @@ func (s Service) Delete(ctx context.Context, userID, labelTemplateID string) err
 		return err
 	}
 
+	err = s.analytics.Send(ctx, external.AnalyticsEventTypeDeleted, model.UserID)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -258,22 +275,62 @@ func (s Service) AddCategoryList(ctx context.Context, userID, labelTemplateID st
 	categoryList []contract.Category) error {
 	action := contract.LabelTemplateHistoryRowActionCategoryListAdded
 
-	return s.editCategoryList(ctx, userID, labelTemplateID, categoryList, true, action)
+	err := s.editCategoryList(ctx, userID, labelTemplateID, categoryList, true, action)
+	if err != nil {
+		return err
+	}
+
+	err = s.analytics.Send(ctx, external.AnalyticsEventTypeCategoryListAdded, userID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s Service) UnlinkCategoryList(ctx context.Context, userID, labelTemplateID string,
 	categoryList []contract.Category) error {
 	action := contract.LabelTemplateHistoryRowActionCategoryListUnlinked
 
-	return s.editCategoryList(ctx, userID, labelTemplateID, categoryList, false, action)
+	err := s.editCategoryList(ctx, userID, labelTemplateID, categoryList, false, action)
+	if err != nil {
+		return err
+	}
+
+	err = s.analytics.Send(ctx, external.AnalyticsEventTypeCategoryListUnlinked, userID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s Service) Deactivate(ctx context.Context, userID, labelTemplateID string) error {
-	return s.changeLabelTemplateActivity(ctx, userID, labelTemplateID, false)
+	err := s.changeLabelTemplateActivity(ctx, userID, labelTemplateID, false)
+	if err != nil {
+		return err
+	}
+
+	err = s.analytics.Send(ctx, external.AnalyticsEventTypeDeactivated, userID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s Service) Activate(ctx context.Context, userID, labelTemplateID string) error {
-	return s.changeLabelTemplateActivity(ctx, userID, labelTemplateID, true)
+	err := s.changeLabelTemplateActivity(ctx, userID, labelTemplateID, true)
+	if err != nil {
+		return err
+	}
+
+	err = s.analytics.Send(ctx, external.AnalyticsEventTypeActivated, userID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s Service) StartLabelGeneration(ctx context.Context, userID, labelID string, sku int64) error {
@@ -290,6 +347,11 @@ func (s Service) StartLabelGeneration(ctx context.Context, userID, labelID strin
 	}
 
 	err = s.labelRepository.Create(ctx, label)
+	if err != nil {
+		return err
+	}
+
+	err = s.analytics.Send(ctx, external.AnalyticsEventTypeLabelGenerationStarted, userID)
 	if err != nil {
 		return err
 	}
@@ -353,6 +415,11 @@ func (s Service) FillLabelGeneration(ctx context.Context, userID, generationID s
 		return err
 	}
 
+	err = s.analytics.Send(ctx, external.AnalyticsEventTypeLabelGenerationFilled, userID)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -400,6 +467,11 @@ func (s Service) GenerateLabel(ctx context.Context, userID, generationID string)
 	label.File = &generatorFile.Path
 
 	err = s.labelRepository.Update(ctx, label)
+	if err != nil {
+		return err
+	}
+
+	err = s.analytics.Send(ctx, external.AnalyticsEventTypeLabelGenerated, userID)
 	if err != nil {
 		return err
 	}
