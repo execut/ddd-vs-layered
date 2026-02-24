@@ -75,6 +75,20 @@ func (a *Application) Update(ctx context.Context, labelTemplateID string, manufa
 	return nil
 }
 
+func (a *Application) Deactivate(ctx context.Context, labelTemplateID string) error {
+	_ = ctx
+	_ = labelTemplateID
+
+	return nil
+}
+
+func (a *Application) Activate(ctx context.Context, labelTemplateID string) error {
+	_ = ctx
+	_ = labelTemplateID
+
+	return nil
+}
+
 func (a *Application) HistoryList(
 	ctx context.Context,
 	labelTemplateID string) ([]contract.LabelTemplateHistoryRow, error) {
