@@ -283,12 +283,12 @@ func TestLabelTemplate_Live(t *testing.T) {
 		t.Run("деактивировать", func(t *testing.T) {
 			err = app.Deactivate(t.Context(), expectedTemplateID)
 
-			require.Error(t, err)
+			require.NoError(t, err)
 		})
 		t.Run("и активировать шаблоны", func(t *testing.T) {
 			err = app.Activate(t.Context(), expectedTemplateID)
 
-			require.Error(t, err)
+			require.NoError(t, err)
 		})
 	})
 
@@ -346,11 +346,11 @@ func TestLabelTemplate_Live(t *testing.T) {
 			},
 			{
 				OrderKey: 8,
-				Action:   contract.LabelTemplateHistoryRowActionActivated,
+				Action:   contract.LabelTemplateHistoryRowActionDeactivated,
 			},
 			{
 				OrderKey: 9,
-				Action:   contract.LabelTemplateHistoryRowActionDeactivated,
+				Action:   contract.LabelTemplateHistoryRowActionActivated,
 			},
 		}, result)
 	})
