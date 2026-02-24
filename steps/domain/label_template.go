@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"effective-architecture/steps/contract"
 	"errors"
 	"fmt"
 	"slices"
@@ -11,6 +12,7 @@ var (
 	ErrLabelTemplateAlreadyDeleted = errors.New("попытка удалить уже удалённый шаблон")
 	ErrCategoryAlreadyAdded        = errors.New("категория уже привязана к шаблону")
 	ErrCategoryAlreadyDeleted      = errors.New("категория уже отвязана от шаблона")
+	ErrLabelTemplateWrongUser      = contract.ErrLabelTemplateWrongUser
 )
 
 type LabelTemplate struct {
@@ -19,6 +21,7 @@ type LabelTemplate struct {
 	ID           LabelTemplateID
 	Events       []LabelTemplateEvent
 	CategoryList []Category
+	UserID       string
 }
 
 func NewLabelTemplate(id LabelTemplateID) (*LabelTemplate, error) {
@@ -28,12 +31,12 @@ func NewLabelTemplate(id LabelTemplateID) (*LabelTemplate, error) {
 	}, nil
 }
 
-func (t *LabelTemplate) Create(manufacturer Manufacturer) error {
+func (t *LabelTemplate) Create(userID string, manufacturer Manufacturer) error {
 	if t.Status != LabelTemplateStatusDraft && t.Status != LabelTemplateStatusDeleted {
 		return ErrLabelTemplateAlreadyCreated
 	}
 
-	err := t.addAndApplyEvent(LabelTemplateCreatedEvent{Manufacturer: manufacturer})
+	err := t.addAndApplyEvent(LabelTemplateCreatedEvent{Manufacturer: manufacturer, UserID: userID})
 	if err != nil {
 		return err
 	}
@@ -41,8 +44,13 @@ func (t *LabelTemplate) Create(manufacturer Manufacturer) error {
 	return nil
 }
 
-func (t *LabelTemplate) Update(manufacturer Manufacturer) error {
-	err := t.addAndApplyEvent(LabelTemplateUpdatedEvent{Manufacturer: manufacturer})
+func (t *LabelTemplate) Update(userID string, manufacturer Manufacturer) error {
+	err := t.checkUser(userID)
+	if err != nil {
+		return err
+	}
+
+	err = t.addAndApplyEvent(LabelTemplateUpdatedEvent{Manufacturer: manufacturer})
 	if err != nil {
 		return err
 	}
@@ -50,7 +58,12 @@ func (t *LabelTemplate) Update(manufacturer Manufacturer) error {
 	return nil
 }
 
-func (t *LabelTemplate) AddCategoryList(categoryList []Category) error {
+func (t *LabelTemplate) AddCategoryList(userID string, categoryList []Category) error {
+	err := t.checkUser(userID)
+	if err != nil {
+		return err
+	}
+
 	for _, currentCategory := range t.CategoryList {
 		for _, newCategory := range categoryList {
 			if currentCategory.Same(newCategory) {
@@ -64,7 +77,7 @@ func (t *LabelTemplate) AddCategoryList(categoryList []Category) error {
 		}
 	}
 
-	err := t.addAndApplyEvent(LabelTemplateCategoryListAddedEvent{CategoryList: categoryList})
+	err = t.addAndApplyEvent(LabelTemplateCategoryListAddedEvent{CategoryList: categoryList})
 	if err != nil {
 		return err
 	}
@@ -72,7 +85,12 @@ func (t *LabelTemplate) AddCategoryList(categoryList []Category) error {
 	return nil
 }
 
-func (t *LabelTemplate) UnlinkCategoryList(categoryList []Category) error {
+func (t *LabelTemplate) UnlinkCategoryList(userID string, categoryList []Category) error {
+	err := t.checkUser(userID)
+	if err != nil {
+		return err
+	}
+
 	for _, deletedCategory := range categoryList {
 		has := false
 
@@ -94,7 +112,7 @@ func (t *LabelTemplate) UnlinkCategoryList(categoryList []Category) error {
 		}
 	}
 
-	err := t.addAndApplyEvent(LabelTemplateCategoryListUnlinkedEvent{CategoryList: categoryList})
+	err = t.addAndApplyEvent(LabelTemplateCategoryListUnlinkedEvent{CategoryList: categoryList})
 	if err != nil {
 		return err
 	}
@@ -102,8 +120,13 @@ func (t *LabelTemplate) UnlinkCategoryList(categoryList []Category) error {
 	return nil
 }
 
-func (t *LabelTemplate) Activate() error {
-	err := t.addAndApplyEvent(LabelTemplateActivatedEvent{})
+func (t *LabelTemplate) Activate(userID string) error {
+	err := t.checkUser(userID)
+	if err != nil {
+		return err
+	}
+
+	err = t.addAndApplyEvent(LabelTemplateActivatedEvent{})
 	if err != nil {
 		return err
 	}
@@ -111,8 +134,13 @@ func (t *LabelTemplate) Activate() error {
 	return nil
 }
 
-func (t *LabelTemplate) Deactivate() error {
-	err := t.addAndApplyEvent(LabelTemplateDeactivatedEvent{})
+func (t *LabelTemplate) Deactivate(userID string) error {
+	err := t.checkUser(userID)
+	if err != nil {
+		return err
+	}
+
+	err = t.addAndApplyEvent(LabelTemplateDeactivatedEvent{})
 	if err != nil {
 		return err
 	}
@@ -120,12 +148,17 @@ func (t *LabelTemplate) Deactivate() error {
 	return nil
 }
 
-func (t *LabelTemplate) Delete() error {
+func (t *LabelTemplate) Delete(userID string) error {
+	err := t.checkUser(userID)
+	if err != nil {
+		return err
+	}
+
 	if t.Status != LabelTemplateStatusCreated {
 		return ErrLabelTemplateAlreadyDeleted
 	}
 
-	err := t.addAndApplyEvent(LabelTemplateDeletedEvent{})
+	err = t.addAndApplyEvent(LabelTemplateDeletedEvent{})
 	if err != nil {
 		return err
 	}
@@ -138,6 +171,7 @@ func (t *LabelTemplate) ApplyEvent(event LabelTemplateEvent) error {
 	case LabelTemplateCreatedEvent:
 		t.Status = LabelTemplateStatusCreated
 		t.Manufacturer = payload.Manufacturer
+		t.UserID = payload.UserID
 	case LabelTemplateUpdatedEvent:
 		t.Manufacturer = payload.Manufacturer
 	case LabelTemplateDeletedEvent:
@@ -170,6 +204,14 @@ func (t *LabelTemplate) addAndApplyEvent(event LabelTemplateEvent) error {
 	err := t.ApplyEvent(event)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (t *LabelTemplate) checkUser(userID string) error {
+	if userID != t.UserID {
+		return ErrLabelTemplateWrongUser
 	}
 
 	return nil

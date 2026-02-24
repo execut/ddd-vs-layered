@@ -3,6 +3,7 @@ package domain
 type LabelEvent any
 
 type LabelGenerationStartedEvent struct {
+	UserID          string
 	LabelTemplateID LabelTemplateID
 	SKU             int64
 }
