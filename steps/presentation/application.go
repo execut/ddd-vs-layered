@@ -13,10 +13,11 @@ type Application struct {
 }
 
 func NewApplication(ctx context.Context,
-	externalServiceOzon external.IExternalServiceOzon, generator external.ILabelGenerator) (*Application, error) {
+	externalServiceOzon external.IExternalServiceOzon, generator external.ILabelGenerator, analytics external.IAnalytics) (*Application, error) {
 	_ = ctx
 	_ = externalServiceOzon
 	_ = generator
+	_ = analytics
 
 	return &Application{}, nil
 }

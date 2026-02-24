@@ -495,7 +495,7 @@ func TestLabelTemplate_Live(t *testing.T) {
 	})
 }
 
-func newApp(t *testing.T) (*application.Application, *mocks) {
+func newApp(t *testing.T) (contract.IApplication, *mocks) {
 	t.Helper()
 	m := NewMocks(t)
 	app, err := presentation.NewApplication(t.Context(), m.ExternalServiceOzon, m.LabelGenerator, m.Analytics)
