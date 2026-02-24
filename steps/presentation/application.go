@@ -11,7 +11,8 @@ import (
 var _ contract.IApplication = (*Application)(nil)
 
 func NewApplication(ctx context.Context,
-	externalServiceOzon external.IExternalServiceOzon, externalGenerator external.ILabelGenerator) (*service.Service, error) {
+	externalServiceOzon external.IExternalServiceOzon,
+	externalGenerator external.ILabelGenerator) (*service.Service, error) {
 	repository, err := service.NewRepository(ctx)
 	if err != nil {
 		return nil, err
@@ -37,10 +38,8 @@ func NewApplication(ctx context.Context,
 		return nil, err
 	}
 
-	_ = externalGenerator
-
 	return service.NewService(repository, historyRepository, categoryRepository, externalServiceOzon,
-		categoryVsLabelTemplateRepository, labelRepository), nil
+		categoryVsLabelTemplateRepository, labelRepository, externalGenerator), nil
 }
 
 type Application struct {
