@@ -33,11 +33,13 @@ type Service struct {
 	ozonService                       external.IExternalServiceOzon
 	categoryVsLabelTemplateRepository *CategoryVsLabelTemplateRepository
 	labelRepository                   *LabelRepository
+	generatorService                  external.ILabelGenerator
 }
 
 func NewService(repository *Repository, historyRepository *HistoryRepository,
 	categoryRepository *VsCategoryRepository, ozonService external.IExternalServiceOzon,
-	categoryVsLabelTemplateRepository *CategoryVsLabelTemplateRepository, labelRepository *LabelRepository) *Service {
+	categoryVsLabelTemplateRepository *CategoryVsLabelTemplateRepository, labelRepository *LabelRepository,
+	generatorService external.ILabelGenerator) *Service {
 	return &Service{
 		repository:                        repository,
 		historyRepository:                 historyRepository,
@@ -45,6 +47,7 @@ func NewService(repository *Repository, historyRepository *HistoryRepository,
 		ozonService:                       ozonService,
 		categoryVsLabelTemplateRepository: categoryVsLabelTemplateRepository,
 		labelRepository:                   labelRepository,
+		generatorService:                  generatorService,
 	}
 }
 
@@ -296,7 +299,8 @@ func (s Service) LabelGeneration(ctx context.Context, id string) (contract.Label
 	}
 
 	return contract.LabelGeneration{
-		Status: label.Status,
+		Status:   label.Status,
+		FilePath: label.File,
 	}, nil
 }
 
@@ -316,9 +320,64 @@ func (s Service) FillLabelGeneration(ctx context.Context, generationID string) e
 		return err
 	}
 
+	template, err := s.repository.Find(ctx, templateID)
+	if err != nil {
+		return err
+	}
+
 	label.LabelTemplateID = &templateID
 	label.Status = contract.LabelGenerationStatusDataFilled
-	label.ProductName = product.Name
+	label.ProductName = &product.Name
+	label.ManufacturerOrganizationName = &template.ManufacturerOrganizationName
+	label.ManufacturerOrganizationAddress = &template.ManufacturerOrganizationAddress
+	label.ManufacturerEmail = &template.ManufacturerEmail
+	label.ManufacturerSite = &template.ManufacturerSite
+
+	err = s.labelRepository.Update(ctx, label)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s Service) GenerateLabel(ctx context.Context, generationID string) error {
+	label, err := s.labelRepository.Get(ctx, generationID)
+	if err != nil {
+		return err
+	}
+
+	label.Status = contract.LabelGenerationStatusGenerated
+
+	manufacturer := contract.Manufacturer{}
+	if label.ManufacturerOrganizationName != nil {
+		manufacturer.OrganizationName = *label.ManufacturerOrganizationName
+	}
+
+	if label.ManufacturerOrganizationAddress != nil {
+		manufacturer.OrganizationAddress = *label.ManufacturerOrganizationAddress
+	}
+
+	if label.ManufacturerEmail != nil {
+		manufacturer.Email = *label.ManufacturerEmail
+	}
+
+	if label.ManufacturerSite != nil {
+		manufacturer.Site = *label.ManufacturerSite
+	}
+
+	contractProduct := contract.Product{
+		Name:         *label.ProductName,
+		Manufacturer: manufacturer,
+		SKU:          label.SKU,
+	}
+
+	generatorFile, err := s.generatorService.Generate(ctx, contractProduct)
+	if err != nil {
+		return err
+	}
+
+	label.File = &generatorFile.Path
 
 	err = s.labelRepository.Update(ctx, label)
 	if err != nil {

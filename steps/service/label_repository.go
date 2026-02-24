@@ -47,11 +47,14 @@ func (r LabelRepository) Exists(ctx context.Context, id string) error {
 }
 
 func (r LabelRepository) Get(ctx context.Context, generationID string) (Label, error) {
-	sql := `SELECT label_template_id, sku, status FROM label WHERE id = $1`
+	sql := `SELECT label_template_id, sku, status, product_name, manufacturer_organization_name,
+            manufacturer_organization_address, manufacturer_email, manufacturer_site,
+            file FROM label WHERE id = $1`
 	model := Label{}
 
 	err := r.conn.QueryRow(ctx, sql, generationID).Scan(&model.LabelTemplateID, &model.SKU,
-		&model.Status)
+		&model.Status, &model.ProductName, &model.ManufacturerOrganizationName, &model.ManufacturerOrganizationAddress,
+		&model.ManufacturerEmail, &model.ManufacturerSite, &model.File)
 	if err != nil {
 		return Label{}, err
 	}
@@ -86,11 +89,17 @@ func (r LabelRepository) Create(ctx context.Context, model Label) error {
 
 func (r LabelRepository) Update(ctx context.Context, model Label) error {
 	sql := `
-       UPDATE label SET label_template_id=$2, sku=$3, status=$4, product_name=$5
+       UPDATE label SET label_template_id=$2, sku=$3, status=$4, product_name=$5, manufacturer_organization_name=$6,
+            manufacturer_organization_address=$7,
+            manufacturer_email=$8,
+            manufacturer_site=$9,
+            file=$10
        WHERE id=$1
    `
 
-	result, err := r.conn.Exec(ctx, sql, model.ID, model.LabelTemplateID, model.SKU, model.Status, model.ProductName)
+	result, err := r.conn.Exec(ctx, sql, model.ID, model.LabelTemplateID, model.SKU, model.Status, model.ProductName,
+		model.ManufacturerOrganizationName, model.ManufacturerOrganizationAddress, model.ManufacturerEmail,
+		model.ManufacturerSite, model.File)
 	if err != nil {
 		return err
 	}

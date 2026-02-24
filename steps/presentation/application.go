@@ -3,42 +3,43 @@ package presentation
 import (
 	"context"
 
-    "effective-architecture/steps/contract"
-    "effective-architecture/steps/contract/external"
-    "effective-architecture/steps/service"
+	"effective-architecture/steps/contract"
+	"effective-architecture/steps/contract/external"
+	"effective-architecture/steps/service"
 )
 
 var _ contract.IApplication = (*Application)(nil)
 
 func NewApplication(ctx context.Context,
-    externalServiceOzon external.IExternalServiceOzon) (*service.Service, error) {
-    repository, err := service.NewRepository(ctx)
-    if err != nil {
-        return nil, err
-    }
+	externalServiceOzon external.IExternalServiceOzon,
+	externalGenerator external.ILabelGenerator) (*service.Service, error) {
+	repository, err := service.NewRepository(ctx)
+	if err != nil {
+		return nil, err
+	}
 
-    historyRepository, err := service.NewHistoryRepository(ctx)
-    if err != nil {
-        return nil, err
-    }
+	historyRepository, err := service.NewHistoryRepository(ctx)
+	if err != nil {
+		return nil, err
+	}
 
-    categoryRepository, err := service.NewVsCategoryRepository(ctx)
-    if err != nil {
-        return nil, err
-    }
+	categoryRepository, err := service.NewVsCategoryRepository(ctx)
+	if err != nil {
+		return nil, err
+	}
 
-    categoryVsLabelTemplateRepository, err := service.NewCategoryVsLabelTemplateRepository(ctx)
-    if err != nil {
-        return nil, err
-    }
+	categoryVsLabelTemplateRepository, err := service.NewCategoryVsLabelTemplateRepository(ctx)
+	if err != nil {
+		return nil, err
+	}
 
-    labelRepository, err := service.NewLabelRepository(ctx)
-    if err != nil {
-        return nil, err
-    }
+	labelRepository, err := service.NewLabelRepository(ctx)
+	if err != nil {
+		return nil, err
+	}
 
-    return service.NewService(repository, historyRepository, categoryRepository, externalServiceOzon,
-        categoryVsLabelTemplateRepository, labelRepository), nil
+	return service.NewService(repository, historyRepository, categoryRepository, externalServiceOzon,
+		categoryVsLabelTemplateRepository, labelRepository, externalGenerator), nil
 }
 
 type Application struct {
@@ -132,6 +133,13 @@ func (a *Application) LabelGeneration(ctx context.Context, generationID string) 
 }
 
 func (a *Application) FillLabelGeneration(ctx context.Context, generationID string) error {
+	_ = ctx
+	_ = generationID
+
+	return nil
+}
+
+func (a *Application) GenerateLabel(ctx context.Context, generationID string) error {
 	_ = ctx
 	_ = generationID
 

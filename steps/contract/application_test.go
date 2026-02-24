@@ -26,10 +26,17 @@ const (
 	expectedNewManufacturerSite                       = "https://new-test.com"
 	expectedSKU                                int64  = 555
 	expectedProductName                        string = "test product name"
+	expectedLabelFile                                 = "expected label file"
 )
 
 var (
 	expectedCategory2TypeID = "3"
+	expectedNewManufacturer = contract.Manufacturer{
+		OrganizationName:    expectedNewManufacturerOrganizationName,
+		OrganizationAddress: expectedNewManufacturerOrganizationAddress,
+		Email:               expectedNewManufacturerEmail,
+		Site:                expectedNewManufacturerSite,
+	}
 )
 
 func TestLabelTemplate_Live(t *testing.T) {
@@ -37,7 +44,8 @@ func TestLabelTemplate_Live(t *testing.T) {
 
 	ctrl := gomock.NewController(t)
 	externalOzonMock := external.NewMockIExternalServiceOzon(ctrl)
-	app, err := presentation.NewApplication(t.Context(), externalOzonMock)
+	externalLabelGeneratorMock := external.NewMockILabelGenerator(ctrl)
+	app, err := presentation.NewApplication(t.Context(), externalOzonMock, externalLabelGeneratorMock)
 	require.NoError(t, err)
 	_ = app.Cleanup(t.Context(), expectedTemplateID)
 	_ = app.Cleanup(t.Context(), expectedLabelGenerationID)
@@ -115,12 +123,7 @@ func TestLabelTemplate_Live(t *testing.T) {
 			assert.Equal(t, expectedManufacturerSite, result.Manufacturer.Site)
 		})
 		t.Run("и обновлении", func(t *testing.T) {
-			err := app.Update(t.Context(), expectedTemplateID, contract.Manufacturer{
-				OrganizationName:    expectedNewManufacturerOrganizationName,
-				OrganizationAddress: expectedNewManufacturerOrganizationAddress,
-				Email:               expectedNewManufacturerEmail,
-				Site:                expectedNewManufacturerSite,
-			})
+			err := app.Update(t.Context(), expectedTemplateID, expectedNewManufacturer)
 
 			require.NoError(t, err)
 			result, err := app.Get(t.Context(), expectedTemplateID)
@@ -404,6 +407,25 @@ func TestLabelTemplate_Live(t *testing.T) {
 		response, err := app.LabelGeneration(t.Context(), expectedLabelGenerationID)
 		require.NoError(t, err)
 		assert.Equal(t, contract.LabelGenerationStatusDataFilled, response.Status)
+	})
+
+	t.Run("18. Генерировать этикетку через внешний сервис, передавая ему все нужные данные", func(t *testing.T) {
+		externalLabelGeneratorMock.EXPECT().Generate(t.Context(), contract.Product{
+			Name:         expectedProductName,
+			Manufacturer: expectedNewManufacturer,
+			SKU:          expectedSKU,
+		}).Return(external.LabelGeneratorFile{
+			Path: expectedLabelFile,
+		}, nil)
+
+		err := app.GenerateLabel(t.Context(), expectedLabelGenerationID)
+
+		require.NoError(t, err)
+		response, err := app.LabelGeneration(t.Context(), expectedLabelGenerationID)
+		require.NoError(t, err)
+		assert.Equal(t, contract.LabelGenerationStatusGenerated, response.Status)
+		require.NotNil(t, response.FilePath)
+		assert.Equal(t, expectedLabelFile, *response.FilePath)
 	})
 
 	t.Run("5. Чтобы возвращалась уникальная ошибка при попытке удалить уже удалённый шаблон", func(t *testing.T) {

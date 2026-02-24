@@ -58,5 +58,12 @@ type Label struct {
 	LabelTemplateID *string
 	SKU             int64
 	Status          contract.LabelGenerationStatus
-	ProductName     string
+	ProductName     *string
+
+	ManufacturerOrganizationName    *string
+	ManufacturerOrganizationAddress *string
+	ManufacturerEmail               *string
+	ManufacturerSite                *string
+
+	File *string
 }

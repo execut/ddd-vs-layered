@@ -66,5 +66,10 @@ CREATE TABLE label (
     sku BIGINT NOT NULL,
     label_template_id UUID,
     status VARCHAR(255) NOT NULL,
-    product_name VARCHAR(255)
+    product_name VARCHAR(255),
+    manufacturer_organization_name VARCHAR(255),
+    manufacturer_organization_address VARCHAR(255),
+    manufacturer_email VARCHAR(255),
+    manufacturer_site VARCHAR(255),
+    file VARCHAR(255)
 )
