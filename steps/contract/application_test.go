@@ -47,6 +47,7 @@ func TestLabelTemplate_Live(t *testing.T) {
 	ctrl := gomock.NewController(t)
 	externalOzonMock := external.NewMockIExternalServiceOzon(ctrl)
 	externalLabelGeneratorMock := external.NewMockILabelGenerator(ctrl)
+	analyticsMock := external.NewMockIAnalytics(ctrl)
 	app, err := presentation.NewApplication(t.Context(), externalOzonMock, externalLabelGeneratorMock)
 	require.NoError(t, err)
 	_ = app.Cleanup(t.Context(), expectedUserID, expectedTemplateID)
@@ -57,6 +58,7 @@ func TestLabelTemplate_Live(t *testing.T) {
 	})
 
 	t.Run("1. Создавать шаблон этикетки товара с UUID и Наименованием организации производителя", func(t *testing.T) {
+		AssertAnalyticsIsSent(t, analyticsMock, external.AnalyticsEventTypeCreated, expectedUserID)
 		err := app.Create(t.Context(), expectedUserID, expectedTemplateID, contract.Manufacturer{
 			OrganizationName: expectedManufacturerOrganizationName,
 		})
@@ -88,6 +90,7 @@ func TestLabelTemplate_Live(t *testing.T) {
 		assert.ErrorContains(t, err, "попытка создать уже существующий шаблон")
 	})
 	t.Run("7. Обновлять данные шаблона", func(t *testing.T) {
+		AssertAnalyticsIsSent(t, analyticsMock, external.AnalyticsEventTypeUpdated, expectedUserID)
 		err := app.Update(t.Context(), expectedUserID, expectedTemplateID, contract.Manufacturer{
 			OrganizationName: expectedNewManufacturerOrganizationName,
 		})
@@ -107,6 +110,7 @@ func TestLabelTemplate_Live(t *testing.T) {
 		})
 	})
 	t.Run("3. Удалять шаблон этикетки товара по UUID", func(t *testing.T) {
+		AssertAnalyticsIsSent(t, analyticsMock, external.AnalyticsEventTypeDeleted, expectedUserID)
 		err := app.Delete(t.Context(), expectedUserID, expectedTemplateID)
 
 		require.NoError(t, err)
@@ -114,6 +118,7 @@ func TestLabelTemplate_Live(t *testing.T) {
 
 	t.Run("8. Указывать и получать поля Адрес, Email, сайт", func(t *testing.T) {
 		t.Run("при создании", func(t *testing.T) {
+			StubAnalytics(t, analyticsMock)
 			err := app.Create(t.Context(), expectedUserID, expectedTemplateID, contract.Manufacturer{
 				OrganizationName:    expectedManufacturerOrganizationName,
 				OrganizationAddress: expectedManufacturerOrganizationAddress,
@@ -252,6 +257,8 @@ func TestLabelTemplate_Live(t *testing.T) {
 	)
 
 	t.Run("11. Привязывать шаблон к списку категорий или категорий+типов", func(t *testing.T) {
+		AssertAnalyticsIsSent(t, analyticsMock, external.AnalyticsEventTypeCategoryListAdded, expectedUserID)
+
 		err = app.AddCategoryList(t.Context(), expectedUserID, expectedTemplateID, []contract.Category{
 			expectedCategory1,
 			expectedCategory2,
@@ -270,6 +277,8 @@ func TestLabelTemplate_Live(t *testing.T) {
 	})
 
 	t.Run("12. Отвязывать шаблон от списка категорий или категорий+типов", func(t *testing.T) {
+		AssertAnalyticsIsSent(t, analyticsMock, external.AnalyticsEventTypeCategoryListUnlinked, expectedUserID)
+
 		err = app.UnlinkCategoryList(t.Context(), expectedUserID, expectedTemplateID, []contract.Category{
 			expectedCategory2,
 		})
@@ -288,11 +297,15 @@ func TestLabelTemplate_Live(t *testing.T) {
 
 	t.Run("19. Возможность", func(t *testing.T) {
 		t.Run("деактивировать", func(t *testing.T) {
+			AssertAnalyticsIsSent(t, analyticsMock, external.AnalyticsEventTypeDeactivated, expectedUserID)
+
 			err = app.Deactivate(t.Context(), expectedUserID, expectedTemplateID)
 
 			require.NoError(t, err)
 		})
 		t.Run("и активировать шаблоны", func(t *testing.T) {
+			AssertAnalyticsIsSent(t, analyticsMock, external.AnalyticsEventTypeActivated, expectedUserID)
+
 			err = app.Activate(t.Context(), expectedUserID, expectedTemplateID)
 
 			require.NoError(t, err)
@@ -363,6 +376,8 @@ func TestLabelTemplate_Live(t *testing.T) {
 	})
 
 	t.Run("14. Начинать генерацию этикетки по SKU", func(t *testing.T) {
+		AssertAnalyticsIsSent(t, analyticsMock, external.AnalyticsEventTypeLabelGenerationStarted, expectedUserID)
+
 		err := app.StartLabelGeneration(t.Context(), expectedUserID, expectedLabelGenerationID, expectedSKU)
 
 		require.NoError(t, err)
@@ -414,6 +429,7 @@ func TestLabelTemplate_Live(t *testing.T) {
 	})
 
 	t.Run("16. Наполнять этикетку данными из внешнего API и вычислять по ним шаблон", func(t *testing.T) {
+		AssertAnalyticsIsSent(t, analyticsMock, external.AnalyticsEventTypeLabelGenerationFilled, expectedUserID)
 		externalOzonMock.EXPECT().Product(t.Context(), expectedSKU).Return(external.Product{
 			Name: expectedProductName,
 			Category: external.CategoryWithType{
@@ -438,6 +454,7 @@ func TestLabelTemplate_Live(t *testing.T) {
 	})
 
 	t.Run("18. Генерировать этикетку через внешний сервис, передавая ему все нужные данные", func(t *testing.T) {
+		AssertAnalyticsIsSent(t, analyticsMock, external.AnalyticsEventTypeLabelGenerated, expectedUserID)
 		externalLabelGeneratorMock.EXPECT().Generate(t.Context(), contract.Product{
 			Name:         expectedProductName,
 			Manufacturer: expectedNewManufacturer,
@@ -457,6 +474,7 @@ func TestLabelTemplate_Live(t *testing.T) {
 	})
 
 	t.Run("5. Чтобы возвращалась уникальная ошибка при попытке удалить уже удалённый шаблон", func(t *testing.T) {
+		StubAnalytics(t, analyticsMock)
 		err := app.Delete(t.Context(), expectedUserID, expectedTemplateID)
 		require.NoError(t, err)
 
@@ -465,4 +483,15 @@ func TestLabelTemplate_Live(t *testing.T) {
 		require.Error(t, err)
 		require.ErrorContains(t, err, "попытка удалить уже удалённый шаблон")
 	})
+}
+
+func AssertAnalyticsIsSent(t *testing.T, analyticsMock *external.MockIAnalytics, eventType external.AnalyticsEventType,
+	userID string) {
+	t.Helper()
+	analyticsMock.EXPECT().Send(t.Context(), eventType, userID).Return(nil)
+}
+
+func StubAnalytics(t *testing.T, analyticsMock *external.MockIAnalytics) {
+	t.Helper()
+	analyticsMock.EXPECT().Send(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).AnyTimes()
 }
