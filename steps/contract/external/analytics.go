@@ -20,5 +20,5 @@ const (
 )
 
 type IAnalytics interface {
-	Send(ctx context.Context, event AnalyticsEventType, userID string)
+	Send(ctx context.Context, event AnalyticsEventType, userID string) error
 }
