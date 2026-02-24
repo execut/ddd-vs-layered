@@ -2,7 +2,11 @@ package contract
 
 import (
 	"context"
+	"errors"
 )
+
+var ErrLabelTemplateWrongUser = errors.New("нельзя редактировать чужие записи")
+var ErrLabelWrongUser = errors.New("нельзя редактировать чужие записи")
 
 type IApplication interface {
 	Create(ctx context.Context, userID string, labelTemplateID string, manufacturer Manufacturer) error
