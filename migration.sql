@@ -1,6 +1,7 @@
--- Шардировано по id шаблона:
+-- Шардировано по user_id:
 CREATE TABLE label_templates (
     id UUID PRIMARY KEY,
+    user_id UUID NOT NULL,
     manufacturer_organization_name VARCHAR(255) NOT NULL,
     manufacturer_organization_address VARCHAR(255),
     manufacturer_email VARCHAR(255),

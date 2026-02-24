@@ -2,6 +2,7 @@ package commands
 
 import (
 	"context"
+	"os"
 
 	"effective-architecture/steps/contract"
 	"effective-architecture/steps/presentation"
@@ -16,6 +17,7 @@ var (
 		Short: "",
 		Long:  ``,
 	}
+	userID              string
 	labelTemplateID     string
 	organizationName    string
 	organizationAddress string
@@ -47,6 +49,7 @@ func Execute() error {
 	}
 
 	rootCmd.PersistentFlags().StringVarP(&labelTemplateID, "id", "i", "", "id")
+	userID = os.Getenv("USER_ID")
 
 	err = rootCmd.Execute()
 	if err != nil {
