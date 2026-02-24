@@ -75,7 +75,7 @@ func (s Service) Create(ctx context.Context, labelTemplateID string,
 		return err
 	}
 
-	action := "created"
+	action := contract.LabelTemplateHistoryRowActionCreated
 
 	err = s.createHistory(ctx, labelTemplateID, manufacturer, action)
 	if err != nil {
@@ -105,7 +105,7 @@ func (s Service) Update(ctx context.Context, labelTemplateID string,
 		return err
 	}
 
-	action := "updated"
+	action := contract.LabelTemplateHistoryRowActionUpdated
 
 	err = s.createHistory(ctx, labelTemplateID, manufacturer, action)
 	if err != nil {
@@ -146,7 +146,7 @@ func (s Service) Delete(ctx context.Context, labelTemplateID string) error {
 
 	err = s.historyRepository.Create(ctx, LabelTemplateHistory{
 		LabelTemplateID: labelTemplateID,
-		Action:          "deleted",
+		Action:          contract.LabelTemplateHistoryRowActionDeleted,
 	}, 0)
 	if err != nil {
 		return err
@@ -220,7 +220,7 @@ func (s Service) AddCategoryList(ctx context.Context, labelTemplateID string, ca
 
 	err = s.historyRepository.Create(ctx, LabelTemplateHistory{
 		LabelTemplateID: labelTemplateID,
-		Action:          "category_list_added",
+		Action:          contract.LabelTemplateHistoryRowActionCategoryListAdded,
 		CategoryList:    serviceCategoryList,
 	}, 0)
 	if err != nil {
@@ -262,7 +262,7 @@ func (s Service) UnlinkCategoryList(ctx context.Context, labelTemplateID string,
 
 	err = s.historyRepository.Create(ctx, LabelTemplateHistory{
 		LabelTemplateID: labelTemplateID,
-		Action:          "category_list_unlinked",
+		Action:          contract.LabelTemplateHistoryRowActionCategoryListUnlinked,
 		CategoryList:    serviceCategoryList,
 	}, 0)
 	if err != nil {
@@ -270,6 +270,14 @@ func (s Service) UnlinkCategoryList(ctx context.Context, labelTemplateID string,
 	}
 
 	return nil
+}
+
+func (s Service) Deactivate(ctx context.Context, labelTemplateID string) error {
+	return s.changeLabelTemplateActivity(ctx, labelTemplateID, false)
+}
+
+func (s Service) Activate(ctx context.Context, labelTemplateID string) error {
+	return s.changeLabelTemplateActivity(ctx, labelTemplateID, true)
 }
 
 func (s Service) StartLabelGeneration(ctx context.Context, labelID string, sku int64) error {
@@ -397,6 +405,37 @@ func (s Service) Cleanup(ctx context.Context, labelTemplateID string) error {
 	return nil
 }
 
+func (s Service) changeLabelTemplateActivity(ctx context.Context, labelTemplateID string, isActive bool) error {
+	model, err := s.repository.Find(ctx, labelTemplateID)
+	if err != nil {
+		return err
+	}
+
+	model.IsActive = isActive
+
+	err = s.repository.Update(ctx, model)
+	if err != nil {
+		return err
+	}
+
+	var action contract.LabelTemplateHistoryRowAction
+	if isActive {
+		action = contract.LabelTemplateHistoryRowActionActivated
+	} else {
+		action = contract.LabelTemplateHistoryRowActionDeactivated
+	}
+
+	err = s.historyRepository.Create(ctx, LabelTemplateHistory{
+		LabelTemplateID: labelTemplateID,
+		Action:          action,
+	}, 0)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s Service) validateManufacturer(manufacturer contract.Manufacturer) error {
 	const varcharLimit = 255
 	if len(manufacturer.OrganizationName) > varcharLimit || len(manufacturer.OrganizationName) == 0 {
@@ -513,7 +552,7 @@ func mapHistoryCategoryToContract(serviceCategoryList []HistoryCategory) []contr
 }
 
 func (s Service) createHistory(ctx context.Context, labelTemplateID string, manufacturer contract.Manufacturer,
-	action string) error {
+	action contract.LabelTemplateHistoryRowAction) error {
 	err := s.historyRepository.Create(ctx, LabelTemplateHistory{
 		LabelTemplateID:                    labelTemplateID,
 		Action:                             action,

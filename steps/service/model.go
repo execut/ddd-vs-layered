@@ -12,13 +12,14 @@ type LabelTemplate struct {
 	ManufacturerOrganizationAddress string
 	ManufacturerEmail               string
 	ManufacturerSite                string
+	IsActive                        bool
 }
 
 type LabelTemplateHistory struct {
 	ID                                 uuid.UUID
 	LabelTemplateID                    string
 	OrderKey                           string
-	Action                             string
+	Action                             contract.LabelTemplateHistoryRowAction
 	NewManufacturerOrganizationName    string
 	NewManufacturerOrganizationAddress string
 	NewManufacturerEmail               string
