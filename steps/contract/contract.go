@@ -28,14 +28,26 @@ type LabelTemplate struct {
 }
 
 type LabelTemplateHistoryRow struct {
-	OrderKey                           int        `json:"orderKey"`
-	Action                             string     `json:"action"`
-	NewManufacturerOrganizationName    string     `json:"newManufacturerOrganizationName,omitempty"`
-	NewManufacturerOrganizationAddress string     `json:"newManufacturerOrganizationAddress,omitempty"`
-	NewManufacturerEmail               string     `json:"newManufacturerEmail,omitempty"`
-	NewManufacturerSite                string     `json:"newManufacturerSite,omitempty"`
-	CategoryList                       []Category `json:"categoryList,omitempty"`
+	OrderKey                           int                           `json:"orderKey"`
+	Action                             LabelTemplateHistoryRowAction `json:"action"`
+	NewManufacturerOrganizationName    string                        `json:"newManufacturerOrganizationName,omitempty"`
+	NewManufacturerOrganizationAddress string                        `json:"newManufacturerOrganizationAddress,omitempty"`
+	NewManufacturerEmail               string                        `json:"newManufacturerEmail,omitempty"`
+	NewManufacturerSite                string                        `json:"newManufacturerSite,omitempty"`
+	CategoryList                       []Category                    `json:"categoryList,omitempty"`
 }
+
+type LabelTemplateHistoryRowAction string
+
+const (
+	LabelTemplateHistoryRowActionCreated              LabelTemplateHistoryRowAction = "created"
+	LabelTemplateHistoryRowActionUpdated              LabelTemplateHistoryRowAction = "updated"
+	LabelTemplateHistoryRowActionDeleted              LabelTemplateHistoryRowAction = "deleted"
+	LabelTemplateHistoryRowActionCategoryListAdded    LabelTemplateHistoryRowAction = "category_list_added"
+	LabelTemplateHistoryRowActionCategoryListUnlinked LabelTemplateHistoryRowAction = "category_list_unlinked"
+	LabelTemplateHistoryRowActionActivated            LabelTemplateHistoryRowAction = "activated"
+	LabelTemplateHistoryRowActionDeactivated          LabelTemplateHistoryRowAction = "deactivated"
+)
 
 type Manufacturer struct {
 	OrganizationName    string `json:"organizationName"`

@@ -264,7 +264,6 @@ func TestLabelTemplate_Live(t *testing.T) {
 
 	t.Run("12. Отвязывать шаблон от списка категорий или категорий+типов", func(t *testing.T) {
 		err = app.UnlinkCategoryList(t.Context(), expectedTemplateID, []contract.Category{
-			expectedCategory1,
 			expectedCategory2,
 		})
 
@@ -280,6 +279,19 @@ func TestLabelTemplate_Live(t *testing.T) {
 		})
 	})
 
+	t.Run("19. Возможность", func(t *testing.T) {
+		t.Run("деактивировать", func(t *testing.T) {
+			err = app.Deactivate(t.Context(), expectedTemplateID)
+
+			require.Error(t, err)
+		})
+		t.Run("и активировать шаблоны", func(t *testing.T) {
+			err = app.Activate(t.Context(), expectedTemplateID)
+
+			require.Error(t, err)
+		})
+	})
+
 	t.Run("10. Чтобы писалась история операций над шаблонами с возможностью"+
 		" выводить все данные в json"+
 		"12. Смотреть историю добавления и удаления категорий в шаблоне", func(t *testing.T) {
@@ -289,21 +301,21 @@ func TestLabelTemplate_Live(t *testing.T) {
 		assert.Equal(t, []contract.LabelTemplateHistoryRow{
 			{
 				OrderKey:                        1,
-				Action:                          "created",
+				Action:                          contract.LabelTemplateHistoryRowActionCreated,
 				NewManufacturerOrganizationName: expectedManufacturerOrganizationName,
 			},
 			{
 				OrderKey:                        2,
-				Action:                          "updated",
+				Action:                          contract.LabelTemplateHistoryRowActionUpdated,
 				NewManufacturerOrganizationName: expectedNewManufacturerOrganizationName,
 			},
 			{
 				OrderKey: 3,
-				Action:   "deleted",
+				Action:   contract.LabelTemplateHistoryRowActionDeleted,
 			},
 			{
 				OrderKey:                           4,
-				Action:                             "created",
+				Action:                             contract.LabelTemplateHistoryRowActionCreated,
 				NewManufacturerOrganizationName:    expectedManufacturerOrganizationName,
 				NewManufacturerOrganizationAddress: expectedManufacturerOrganizationAddress,
 				NewManufacturerEmail:               expectedManufacturerEmail,
@@ -311,7 +323,7 @@ func TestLabelTemplate_Live(t *testing.T) {
 			},
 			{
 				OrderKey:                           5,
-				Action:                             "updated",
+				Action:                             contract.LabelTemplateHistoryRowActionUpdated,
 				NewManufacturerOrganizationName:    expectedNewManufacturerOrganizationName,
 				NewManufacturerOrganizationAddress: expectedNewManufacturerOrganizationAddress,
 				NewManufacturerEmail:               expectedNewManufacturerEmail,
@@ -319,7 +331,7 @@ func TestLabelTemplate_Live(t *testing.T) {
 			},
 			{
 				OrderKey: 6,
-				Action:   "category_list_added",
+				Action:   contract.LabelTemplateHistoryRowActionCategoryListAdded,
 				CategoryList: []contract.Category{
 					expectedCategory1,
 					expectedCategory2,
@@ -327,11 +339,18 @@ func TestLabelTemplate_Live(t *testing.T) {
 			},
 			{
 				OrderKey: 7,
-				Action:   "category_list_unlinked",
+				Action:   contract.LabelTemplateHistoryRowActionCategoryListUnlinked,
 				CategoryList: []contract.Category{
-					expectedCategory1,
 					expectedCategory2,
 				},
+			},
+			{
+				OrderKey: 8,
+				Action:   contract.LabelTemplateHistoryRowActionActivated,
+			},
+			{
+				OrderKey: 9,
+				Action:   contract.LabelTemplateHistoryRowActionDeactivated,
 			},
 		}, result)
 	})
@@ -357,10 +376,6 @@ func TestLabelTemplate_Live(t *testing.T) {
 	})
 
 	t.Run("17. При наполнении этикетки данными должен выставляться статус ошибка с сообщением", func(t *testing.T) {
-		err = app.AddCategoryList(t.Context(), expectedTemplateID, []contract.Category{
-			expectedCategory1,
-		})
-		require.NoError(t, err)
 		t.Run("\"sku не найден\", если SKU отсутствует", func(t *testing.T) {
 			externalOzonMock.EXPECT().Product(gomock.Any(), gomock.Any()).
 				Return(external.Product{}, external.ErrSkuNotFound)
