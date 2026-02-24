@@ -1,11 +1,12 @@
--- Sharded by label_template_id:
-
+-- Шардировано по user_id:
 CREATE TABLE label_templates (
     id UUID PRIMARY KEY,
+    user_id UUID,
     manufacturer_organization_name VARCHAR(255) NOT NULL,
     manufacturer_organization_address VARCHAR(255),
     manufacturer_email VARCHAR(255),
-    manufacturer_site VARCHAR(255)
+    manufacturer_site VARCHAR(255),
+    status varchar(255) NOT NULL
 );
 
 CREATE TABLE label_templates_events (
@@ -48,8 +49,6 @@ CREATE TABLE label_template_vs_categories (
 
 CREATE UNIQUE INDEX label_template_vs_categories_id_pk ON label_template_vs_categories (label_template_id, category_id, type_id);
 
--- Sharded by category_id+type_id:
-
 CREATE TABLE category_id_vs_label_template_id (
     category_id BIGINT NOT NULL,
     type_id BIGINT,
@@ -59,10 +58,9 @@ CREATE TABLE category_id_vs_label_template_id (
 
 CREATE UNIQUE INDEX category_id_vs_label_template_id_pk ON label_template_vs_categories (category_id, type_id, label_template_id);
 
--- Sharded by label_id:
-
 CREATE TABLE label (
     id UUID PRIMARY KEY,
+    user_id UUID,
     sku BIGINT NOT NULL,
     label_template_id UUID,
     status VARCHAR(255) NOT NULL,

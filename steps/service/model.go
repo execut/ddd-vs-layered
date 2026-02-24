@@ -8,12 +8,21 @@ import (
 
 type LabelTemplate struct {
 	ID                              string
+	UserID                          string
 	ManufacturerOrganizationName    string
 	ManufacturerOrganizationAddress string
 	ManufacturerEmail               string
 	ManufacturerSite                string
 	IsActive                        bool
+	Status                          LabelTemplateStatus
 }
+
+type LabelTemplateStatus string
+
+const (
+	LabelTemplateStatusDeleted LabelTemplateStatus = "deleted"
+	LabelTemplateStatusCreated LabelTemplateStatus = "created"
+)
 
 type LabelTemplateHistory struct {
 	ID                                 uuid.UUID
@@ -56,6 +65,7 @@ type CategoryIDVsLabelTemplateID struct {
 
 type Label struct {
 	ID              string
+	UserID          string
 	LabelTemplateID *string
 	SKU             int64
 	Status          contract.LabelGenerationStatus
