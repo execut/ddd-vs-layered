@@ -260,6 +260,54 @@ func (a *Application) UnlinkCategoryList(ctx context.Context, labelTemplateID st
 	return nil
 }
 
+func (a *Application) Deactivate(ctx context.Context, labelTemplateID string) error {
+	domainLabel, err := a.loadLabelTemplate(ctx, labelTemplateID)
+	if err != nil {
+		return err
+	}
+
+	err = domainLabel.Deactivate()
+	if err != nil {
+		return err
+	}
+
+	err = a.repository.Save(ctx, domainLabel)
+	if err != nil {
+		return err
+	}
+
+	err = a.dispatcher.Dispatch(ctx, domainLabel)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (a *Application) Activate(ctx context.Context, labelTemplateID string) error {
+	domainLabel, err := a.loadLabelTemplate(ctx, labelTemplateID)
+	if err != nil {
+		return err
+	}
+
+	err = domainLabel.Activate()
+	if err != nil {
+		return err
+	}
+
+	err = a.repository.Save(ctx, domainLabel)
+	if err != nil {
+		return err
+	}
+
+	err = a.dispatcher.Dispatch(ctx, domainLabel)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (a *Application) StartLabelGeneration(ctx context.Context, id string, sku int64) error {
 	label, err := a.loadLabelGeneration(ctx, id)
 	if err != nil {
