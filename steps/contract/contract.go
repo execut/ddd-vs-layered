@@ -23,6 +23,7 @@ type IApplication interface { //nolint:interfacebloat
 	StartLabelGeneration(ctx context.Context, userID string, generationID string, sku int64) error
 	LabelGeneration(ctx context.Context, userID string, generationID string) (LabelGeneration, error)
 	FillLabelGeneration(ctx context.Context, userID string, generationID string) error
+	GenerateLabel(ctx context.Context, userID string, generationID string) error
 }
 
 type LabelTemplateHistoryList struct {
