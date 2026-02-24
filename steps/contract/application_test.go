@@ -1,7 +1,6 @@
 package contract_test
 
 import (
-	"effective-architecture/steps/application"
 	"strings"
 	"testing"
 
